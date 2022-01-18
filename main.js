@@ -1,8 +1,4 @@
 
-$.getScript("game.js");
-$.getScript("display.js");
-$.getScript("emoticon.js");
-
 window.onload = function () {
   titleTimer.tick()
 }
@@ -22,7 +18,7 @@ let titleTimer = {
   tick: function () {
     $('#title').empty()
     $('#title').append(`${createEmoticon()} [Emoticon] [Rumble] ${createEmoticon()}`)
-    titleTimer.timer = window.setTimeout('titleTimer.tick()', 4000);
+    titleTimer.timer = window.setTimeout('titleTimer.tick()', 4000)
   }
 }
 
@@ -49,8 +45,8 @@ let game = {
     timer: null,
     tick: function () {
       display.drawLeaderboard()
-      this.tickNumber++;
-      this.timer = window.setTimeout('game.leaderboardRenderer.tick()', 2000);
+      this.tickNumber++
+      this.timer = window.setTimeout('game.leaderboardRenderer.tick()', 2000)
     },
     stopTimer: function () {
       this.tickNumber = 0
@@ -68,8 +64,8 @@ let game = {
     timer: null,
     tick: function () {
       display.drawGame()
-      this.tickNumber++;
-      this.timer = window.setTimeout('game.renderer.tick()', game.config.renderSpeed);
+      this.tickNumber++
+      this.timer = window.setTimeout('game.renderer.tick()', game.config.renderSpeed)
     },
     stopTimer: function () {
       this.tickNumber = 0
@@ -97,9 +93,9 @@ let game = {
     game.aiMoveTimers.forEach(t => {
       if (t.emoticon === e1) {
         clearTimeout(t.timer)
-        const index = game.aiMoveTimers.indexOf(t);
+        const index = game.aiMoveTimers.indexOf(t)
         if (index > -1) {
-          game.aiMoveTimers.splice(index, 1);
+          game.aiMoveTimers.splice(index, 1)
         }
       }
     })
@@ -129,8 +125,8 @@ let game = {
     for (let i = 0; i < count; i++) {
       let spawnAttempts = 20
       while (spawnAttempts > 0) {
-        let posX = getRandomInt(game.config.xTileCount);
-        let posY = getRandomInt(game.config.yTileCount);
+        let posX = getRandomInt(game.config.xTileCount)
+        let posY = getRandomInt(game.config.yTileCount)
         if (game.isEmpty(posX, posY) && game.isEmoticon(posX + 1, posY) == false && game.isEmoticon(posX, posY + 1) == false && game.isEmoticon(posX - 1, posY) == false && game.isEmoticon(posX, posY - 1) == false) {
           game.board[posY][posX] = new Emoticon()
           game.createAIMoveTimer(game.board[posY][posX])
@@ -167,7 +163,7 @@ let display = {
     tick: function () {
       $('#title').empty()
       $('#title').append(`${createEmoticon()} [Emoticon] [Rumble] ${createEmoticon()}`)
-      titleTimer.timer = window.setTimeout('titleTimer.tick()', 4000);
+      titleTimer.timer = window.setTimeout('titleTimer.tick()', 4000)
     }
   },
   tileSize: 80,
@@ -176,38 +172,38 @@ let display = {
       for (let x = 0; x < game.config.xTileCount; x++) {
         if (y % 2 === 0) {
           if (x % 2 === 0)
-            ctx.fillStyle = "#c7ecff";
+            ctx.fillStyle = "#c7ecff"
           else
-            ctx.fillStyle = "#fff4ff";
+            ctx.fillStyle = "#fff4ff"
         } else {
           if (x % 2 != 0)
-            ctx.fillStyle = "#c7ecff";
+            ctx.fillStyle = "#c7ecff"
           else
-            ctx.fillStyle = "#fff4ff";
+            ctx.fillStyle = "#fff4ff"
         }
-        ctx.fillRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize);
+        ctx.fillRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize)
       }
     }
-    ctx.lineWidth = 8;
-    ctx.strokeStyle = "#c7ecff";
-    ctx.strokeRect(0, 0, game.config.xTileCount * display.tileSize, game.config.yTileCount * display.tileSize);
+    ctx.lineWidth = 8
+    ctx.strokeStyle = "#c7ecff"
+    ctx.strokeRect(0, 0, game.config.xTileCount * display.tileSize, game.config.yTileCount * display.tileSize)
 
     for (let y = 0; y < game.config.yTileCount; y++) {
       for (let x = 0; x < game.config.xTileCount; x++) {
         if (game.isEmoticon(x, y)) {
           let e1 = game.board[y][x]
-          ctx.fillStyle = "black";
+          ctx.fillStyle = "black"
           //Stats
-          ctx.font = "11px Verdana";
+          ctx.font = "11px Verdana"
           let stats = `❤️${e1.stats.currentHealth}⚔️${e1.stats.attack}🛡️${e1.stats.defence}`
-          ctx.fillText(stats, x * display.tileSize + (40 - (ctx.measureText(stats).width / 2)), y * display.tileSize + 24);
+          ctx.fillText(stats, x * display.tileSize + (40 - (ctx.measureText(stats).width / 2)), y * display.tileSize + 24)
           //Emoticon
-          ctx.font = "16px Verdana";
-          ctx.fillText(e1.emoticon, x * display.tileSize + (40 - (ctx.measureText(e1.emoticon).width / 2)), y * display.tileSize + 44);
+          ctx.font = "16px Verdana"
+          ctx.fillText(e1.emoticon, x * display.tileSize + (40 - (ctx.measureText(e1.emoticon).width / 2)), y * display.tileSize + 44)
           //Level
-          ctx.font = "12px Verdana";
+          ctx.font = "12px Verdana"
           let level = `⭐${e1.level}`
-          ctx.fillText(level, x * display.tileSize + (40 - (ctx.measureText(level).width / 2)), y * display.tileSize + 64);
+          ctx.fillText(level, x * display.tileSize + (40 - (ctx.measureText(level).width / 2)), y * display.tileSize + 64)
         }
       }
     }
@@ -246,10 +242,9 @@ let display = {
 
     let canvas = document.getElementById("canvas")
     let ctx = canvas.getContext("2d")
-    display.drawBoard(ctx);
+    display.drawBoard(ctx)
   }
 }
-
 
 class Emoticon {
   constructor(emoticon, health, attack, defence) {
