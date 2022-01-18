@@ -33,13 +33,14 @@ let game = {
     baseMaxAttackPoints: 10,
     baseMaxDefencePoints: 10,
     lifeStealModifier: .1,
-    renderSpeed: 40,
-    aiSpeed: 800,
+    renderSpeed: 33,
+    aiSpeed: 1000,
     xTileCount: 8,
     yTileCount: 8,
   },
   board: [],
   leaderboard: [],
+  aiMoveTimers: [],
   leaderboardRenderer: {
     tickNumber: 0,
     timer: null,
@@ -72,7 +73,6 @@ let game = {
       clearTimeout(this.timer)
     }
   },
-  aiMoveTimers: [],
   createAIMoveTimer: function (e1) {
     let timer = {
       emoticon: e1,
@@ -113,7 +113,6 @@ let game = {
     if (posX < 0 || posX > game.config.xTileCount - 1 || posY < 0 || posY > game.config.yTileCount - 1)
       return null
 
-
     if (game.board[posY][posX] instanceof Emoticon) {
       return true
     }
@@ -122,17 +121,20 @@ let game = {
     }
   },
   spawnEmoticon: function (count) {
-    for (let i = 0; i < count; i++) {
-      let spawnAttempts = 20
-      while (spawnAttempts > 0) {
-        let posX = getRandomInt(game.config.xTileCount)
-        let posY = getRandomInt(game.config.yTileCount)
-        if (game.isEmpty(posX, posY) && game.isEmoticon(posX + 1, posY) == false && game.isEmoticon(posX, posY + 1) == false && game.isEmoticon(posX - 1, posY) == false && game.isEmoticon(posX, posY - 1) == false) {
-          game.board[posY][posX] = new Emoticon()
-          game.createAIMoveTimer(game.board[posY][posX])
-          break
+    let spawnLimit = Math.floor(((game.config.xTileCount + game.config.yTileCount) / 2) * 1.5)
+    if (game.aiMoveTimers.length < spawnLimit) {
+      for (let i = 0; i < count; i++) {
+        let spawnAttempts = 20
+        while (spawnAttempts >= 0) {
+          let posX = getRandomInt(game.config.xTileCount)
+          let posY = getRandomInt(game.config.yTileCount)
+          if (game.isEmpty(posX, posY) && game.isEmoticon(posX + 1, posY) == false && game.isEmoticon(posX, posY + 1) == false && game.isEmoticon(posX - 1, posY) == false && game.isEmoticon(posX, posY - 1) == false) {
+            game.board[posY][posX] = new Emoticon()
+            game.createAIMoveTimer(game.board[posY][posX])
+            break
+          }
+          spawnAttempts--
         }
-        spawnAttempts--
       }
     }
   },
@@ -150,12 +152,12 @@ let game = {
   },
   aiRumble: function () {
     game.createBoard()
+    display.drawAIRumbleButtons()
     game.renderer.tick()
     game.leaderboardRenderer.tick()
     game.spawnEmoticon(2)
   }
 }
-
 
 let display = {
   titleTimer: {
@@ -196,14 +198,27 @@ let display = {
           //Stats
           ctx.font = "11px Verdana"
           let stats = `❤️${e1.stats.currentHealth}⚔️${e1.stats.attack}🛡️${e1.stats.defence}`
-          ctx.fillText(stats, x * display.tileSize + (40 - (ctx.measureText(stats).width / 2)), y * display.tileSize + 24)
+          ctx.fillText(stats, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(stats).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 3.3))
           //Emoticon
           ctx.font = "16px Verdana"
-          ctx.fillText(e1.emoticon, x * display.tileSize + (40 - (ctx.measureText(e1.emoticon).width / 2)), y * display.tileSize + 44)
+          ctx.fillText(e1.emoticon, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(e1.emoticon).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 1.8))
           //Level
           ctx.font = "12px Verdana"
           let level = `⭐${e1.level}`
-          ctx.fillText(level, x * display.tileSize + (40 - (ctx.measureText(level).width / 2)), y * display.tileSize + 64)
+          ctx.fillText(level, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(level).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 1.25))
+          //Attack Direction
+          if (e1.attackDirection != null) {
+            ctx.font = "16px Verdana"
+            if (e1.attackDirection === 'N')
+              ctx.fillText('⚔️', x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText('⚔️').width / 2)), y * display.tileSize + Math.floor(display.tileSize / 10))
+            if (e1.attackDirection === 'S')
+              ctx.fillText('⚔️', x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText('⚔️').width / 2)), y * display.tileSize + display.tileSize + Math.floor(display.tileSize / 10))
+            if (e1.attackDirection === 'E')
+              ctx.fillText('⚔️', x * display.tileSize + (display.tileSize - (ctx.measureText('⚔️').width / 2)), y * display.tileSize + Math.floor(display.tileSize / 1.8))
+            if (e1.attackDirection === 'W')
+              ctx.fillText('⚔️', x * display.tileSize + (0 - (ctx.measureText('⚔️').width / 2)), y * display.tileSize + Math.floor(display.tileSize / 1.8))
+
+          }
         }
       }
     }
@@ -217,7 +232,6 @@ let display = {
       return 0
     })
 
-    $('#leaderboard').css('min-width', $('body').css('min-width'))
     $('#leaderboard').text('')
 
     let fightersToShow = leaderboard.length < 10 ? leaderboard.length : 10
@@ -234,10 +248,30 @@ let display = {
 
     $('#leaderboard').append(output)
   },
+  drawAIRumbleButtons: function () {
+    $('#game-buttons').append(`<span id="slower-button" class="game-button"><span>🐢</span></span> <span id="faster-button" class="game-button"><span>🐇</span></span> <span id="back-button" class="game-button"><span>🔙</span></span>`)
+
+    $('#back-button').click(function () {
+      window.location.reload()
+    })
+    $('#slower-button').click(function () {
+      game.config.aiSpeed += 100
+      if (game.config.aiSpeed > 100 && game.config.aiSpeed < 200)
+        game.config.aiSpeed = 100
+    })
+    $('#faster-button').click(function () {
+      if (game.config.aiSpeed < 200)
+        game.config.aiSpeed = 50
+      else
+        game.config.aiSpeed -= 100
+    })
+
+  },
   drawGame: function () {
     if (document.getElementById("canvas") === null) {
       $('#display').append(`<canvas id="canvas" width="${game.config.xTileCount * display.tileSize}" height="${game.config.yTileCount * display.tileSize}">`)
       $('body').css('min-width', game.config.xTileCount * display.tileSize)
+      $('#leaderboard').css('min-width', $('body').css('min-width'))
     }
 
     let canvas = document.getElementById("canvas")
@@ -379,9 +413,9 @@ class Emoticon {
         } else if (game.isEmoticon(moveX, moveY)) {
           if (!game.board[moveY][moveX].inCombat) {
             if (pos[0] - moveX > 0)
-              this.attackDirection = 'E'
-            if (pos[0] - moveX < 0)
               this.attackDirection = 'W'
+            if (pos[0] - moveX < 0)
+              this.attackDirection = 'E'
             if (pos[1] - moveY > 0)
               this.attackDirection = 'N'
             if (pos[1] - moveY < 0)
@@ -407,9 +441,9 @@ class Emoticon {
         } else if (game.isEmoticon(moveX, moveY)) {
           if (!game.board[moveY][moveX].inCombat) {
             if (pos[0] - moveX > 0)
-              this.attackDirection = 'E'
-            if (pos[0] - moveX < 0)
               this.attackDirection = 'W'
+            if (pos[0] - moveX < 0)
+              this.attackDirection = 'E'
             if (pos[1] - moveY > 0)
               this.attackDirection = 'N'
             if (pos[1] - moveY < 0)
@@ -433,9 +467,13 @@ function aiFight(e1, e2) {
 
       let status = checkStatus(e1, e2)
       if (status === 'draw') {
+        let spawn = 2
+        if (e1.level > 2 || e2.level > 2)
+          spawn++
+        game.spawnEmoticon(spawn)
+
         e1.remove()
         e2.remove()
-        game.spawnEmoticon(2)
         break
       }
       if (status === 'win') {
