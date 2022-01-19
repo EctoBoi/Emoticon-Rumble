@@ -196,7 +196,7 @@ let display = {
         if (game.isEmoticon(x, y)) {
           let e1 = game.board[y][x]
           ctx.fillStyle = "black"
-          //Level Boarder
+          //Level Border
           if (e1.level > 4) {
             ctx.lineWidth = 3;
             ctx.strokeStyle = "#99ff99";
@@ -314,17 +314,12 @@ class Emoticon {
   }
 
   levelUp(e2) {
-    let points = 0
+    let points = 1
     if (e2 != undefined) {
-      if (e2.level < this.level)
-        points += getRandomInt(2)
-
       if (e2.level >= this.level) {
         points++
         points += Math.floor((e2.level - this.level) / 2)
       }
-    } else {
-      points++
     }
 
     for (let i = 0; i < points; i++) {
