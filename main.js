@@ -338,6 +338,9 @@ class Emoticon {
   lifeSteal(e2) {
     if (this.level > e2.level) {
       let lifeSteal = 1 - ((this.level - e2.level) * game.config.lifeStealModifier)
+      if (lifeSteal < 0)
+        lifeSteal = 0
+
       this.stats.currentHealth += Math.floor(this.stats.health * lifeSteal)
       if (this.stats.currentHealth > this.stats.health)
         this.stats.currentHealth = this.stats.health
