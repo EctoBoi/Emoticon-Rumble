@@ -26,6 +26,7 @@ let game = {
     baseMaxDefencePoints: 10,
     lifeStealModifier: .05,
     renderSpeed: 33,
+    playerFightSpeed: 300,
     aiBaseSpeed: 1000,
     aiMaxSpeed: 50,
     aiMoveSpeedModifier: .05,
@@ -37,6 +38,7 @@ let game = {
   board: [],
   leaderboard: [],
   aiMoveTimers: [],
+  fightTimers: [],
   createBoard: function () {
     game.config.xTileCount = Math.floor((window.innerWidth - 20) / display.tileSize)
     game.config.yTileCount = Math.floor((window.innerHeight - 58) / display.tileSize)
@@ -75,6 +77,17 @@ let game = {
         const index = game.aiMoveTimers.indexOf(t)
         if (index > -1) {
           game.aiMoveTimers.splice(index, 1)
+        }
+      }
+    })
+  },
+  removeFightTimer: function (fightTimer) {
+    game.fightTimers.forEach(t => {
+      if (t.timer === fightTimer.timer) {
+        t.stopTimer()
+        const index = game.fightTimers.indexOf(t)
+        if (index > -1) {
+          game.fightTimers.splice(index, 1)
         }
       }
     })
@@ -154,6 +167,10 @@ let game = {
         game.playerEmoticon.move('E')
     }
   },
+  removePlayerControls: function () {
+    document.body.removeEventListener('keypress', game.playerControls, false);
+    document.body.setAttribute('keypress-listener', 'false');
+  },
   rumble: function () {
     game.createBoard()
     display.renderer.tick()
@@ -174,8 +191,31 @@ let game = {
     game.spawnEmoticon()
     game.spawnEmoticon()
   },
+  reset() {
+    display.renderer.stopTimer()
+    display.leaderboardRenderer.stopTimer()
+
+    game.aiMoveTimers.forEach(t => {
+      t.stopTimer()
+    })
+    game.aiMoveTimers = []
+    game.fightTimers.forEach(t => {
+      t.stopTimer()
+    })
+    game.fightTimers = []
+
+    game.config.aiBaseSpeed = 1000
+    game.gameOverState = false
+    game.board = []
+    game.leaderboard = []
+    $('#display').text('')
+    $('#create-char').text('')
+    $('#game-buttons').text('')
+    $('#leaderboard').text('')
+  },
   gameOver: function () {
     game.gameOverState = true
+    game.removePlayerControls()
     display.drawBackButton()
   }
 }
@@ -360,7 +400,8 @@ let display = {
       `<span id="back-button" class="game-button"><span>🔙</span></span>`)
 
     $('#back-button').click(function () {
-      window.location.reload()
+      game.reset()
+      $('#nav').show()
     })
   },
   drawCreateChar: function () {
@@ -438,7 +479,7 @@ let display = {
       let e1 = new Emoticon(emoticon, h, a, d)
       e1.player = true
       game.playerEmoticon = e1
-      $('#create-char').hide()
+      $('#create-char').text('')
 
       game.rumble()
     })
@@ -678,7 +719,9 @@ class Emoticon {
 function fight(e1, e2) {
   e1.inCombat = true
   e2.inCombat = true
-  let currentFight = function (e1, e2) {
+  let currentFight = function (e1, e2, fightTimer) {
+    game.removeFightTimer(fightTimer)
+
     while (true) {
       attack(e1, e2)
       attack(e2, e1)
@@ -742,8 +785,16 @@ function fight(e1, e2) {
   }
   let fightSpeed = game.config.aiBaseSpeed
   if (e1.player || e2.player)
-    fightSpeed = 300
-  window.setTimeout(currentFight, fightSpeed, e1, e2)
+    fightSpeed = game.config.playerFightSpeed
+
+  let fightTimer = {
+    timer: null,
+    stopTimer: function () {
+      clearTimeout(this.timer)
+    }
+  }
+  fightTimer.timer = window.setTimeout(currentFight, fightSpeed, e1, e2, fightTimer)
+  game.fightTimers.push(fightTimer)
 }
 
 function attack(e1, e2) {
