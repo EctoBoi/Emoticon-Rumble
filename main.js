@@ -4,8 +4,8 @@ window.onload = function () {
 }
 
 $('#rumble-nav').click(function () {
-  //$('#nav').hide()
-  game.rumble()
+  $('#nav').hide()
+  game.createChar()
 })
 
 $('#ai-rumble-nav').click(function () {
@@ -26,10 +26,12 @@ let game = {
     baseMaxDefencePoints: 10,
     lifeStealModifier: .05,
     renderSpeed: 33,
-    aiSpeed: 1000,
+    aiSpeed: 100,
     xTileCount: 8,
     yTileCount: 8,
   },
+  playerEmoticon: null,
+  gameOverState: false,
   board: [],
   leaderboard: [],
   aiMoveTimers: [],
@@ -112,7 +114,16 @@ let game = {
       return false
     }
   },
-  spawnEmoticon: function (level) {
+  findEmoticon: function (e1) {
+    for (let y = 0; y < game.board.length; y++) {
+      let x = game.board[y].indexOf(e1)
+      if (x > -1) {
+        return [x, y]
+      }
+    }
+    return null
+  },
+  spawnEmoticon: function (level, e1) {
     let spawnLimit = Math.floor(((game.config.xTileCount + game.config.yTileCount) / 2))
     if (level === undefined || level < 1) {
       level = 1
@@ -123,14 +134,16 @@ let game = {
         let posX = getRandomInt(game.config.xTileCount)
         let posY = getRandomInt(game.config.yTileCount)
         if (game.isEmpty(posX, posY) && !game.isEmoticon(posX + 1, posY) && !game.isEmoticon(posX, posY + 1) && !game.isEmoticon(posX - 1, posY) && !game.isEmoticon(posX, posY - 1)) {
-          let e1 = new Emoticon()
+          if (e1 === undefined)
+            e1 = new Emoticon()
           if (level > 1) {
             for (let i = 1; i < level; i++) {
               e1.levelUp()
             }
           }
           game.board[posY][posX] = e1
-          game.createAIMoveTimer(game.board[posY][posX])
+          if (!e1.player)
+            game.createAIMoveTimer(game.board[posY][posX])
           break
         }
         spawnAttempts--
@@ -138,17 +151,20 @@ let game = {
 
     }
   },
-  findEmoticon: function (e1) {
-    for (let y = 0; y < game.board.length; y++) {
-      let x = game.board[y].indexOf(e1)
-      if (x > -1) {
-        return [x, y]
-      }
-    }
-    return null
+  playerControls: function () {
+    
   },
   rumble: function () {
-
+    game.createBoard()
+    game.renderer.tick()
+    game.leaderboardRenderer.tick()
+    game.spawnEmoticon(1, game.playerEmoticon)
+    game.spawnEmoticon()
+    game.spawnEmoticon()
+    game.playerControls()
+  },
+  createChar: function () {
+    display.drawCreateChar()
   },
   aiRumble: function () {
     game.createBoard()
@@ -157,6 +173,10 @@ let game = {
     game.leaderboardRenderer.tick()
     game.spawnEmoticon()
     game.spawnEmoticon()
+  },
+  gameOver: function () {
+    game.gameOverState = true
+    display.drawBackButton()
   }
 }
 
@@ -235,6 +255,19 @@ let display = {
         }
       }
     }
+
+    if (game.gameOverState) {
+      let gameOverText = 'Game Over'
+      let frame = game.renderer.tickNumber % game.config.renderSpeed
+
+      ctx.fillStyle = 'black'
+      ctx.font = 'bold ' + Math.floor(ctx.canvas.clientWidth / 9.5) + 'px Verdana'
+      ctx.fillText(gameOverText, (ctx.canvas.clientWidth / 2) - (ctx.measureText(gameOverText).width / 2), (ctx.canvas.clientHeight / 2) + (ctx.canvas.clientHeight / 20))
+
+      ctx.fillStyle = 'red'
+      ctx.font = 'bold ' + Math.floor(ctx.canvas.clientWidth / 10) + 'px Verdana'
+      ctx.fillText(gameOverText, (ctx.canvas.clientWidth / 2) - (ctx.measureText(gameOverText).width / 2), (ctx.canvas.clientHeight / 2) + (ctx.canvas.clientHeight / 20))
+    }
   },
   drawLeaderboard: function () {
     let leaderboard = game.leaderboard.sort((a, b) => {
@@ -250,7 +283,8 @@ let display = {
     let fightersToShow = leaderboard.length < 10 ? leaderboard.length : 10
     let output = ''
     for (let i = 0; i < fightersToShow; i++) {
-      output += `<div style="display: inline-block;"><div style="display: inline-block; width:53px;">#${i + 1}${i === 0 ? '👑' : ''}: </div><div class="emoticon">${leaderboard[i].emoticon}</div> ⭐${leaderboard[i].level} 🏆:${leaderboard[i].wins} ❤️:${leaderboard[i].stats.health} ⚔️:${leaderboard[i].stats.attack} 🛡️:${leaderboard[i].stats.defence}</div><br>`
+      output += `<div style="display: inline-block;"><div style="display: inline-block; width:53px;">#${i + 1}${i === 0 ? '👑' : ''}: </div>
+      <div class="emoticon">${leaderboard[i].emoticon}</div> ⭐${leaderboard[i].level} 🏆:${leaderboard[i].wins} ❤️:${leaderboard[i].stats.health} ⚔️:${leaderboard[i].stats.attack} 🛡️:${leaderboard[i].stats.defence}</div><br>`
     }
 
     output += `<br><br>`
@@ -262,11 +296,10 @@ let display = {
     $('#leaderboard').append(output)
   },
   drawAIRumbleButtons: function () {
-    $('#game-buttons').append(`<span id="slower-button" class="game-button"><span>🐢</span></span> <span id="faster-button" class="game-button"><span>🐇</span></span> <span id="back-button" class="game-button"><span>🔙</span></span>`)
+    $('#game-buttons').append(
+      `<span id="slower-button" class="game-button"><span>🐢</span></span> 
+      <span id="faster-button" class="game-button"><span>🐇</span></span>`)
 
-    $('#back-button').click(function () {
-      window.location.reload()
-    })
     $('#slower-button').click(function () {
       game.config.aiSpeed += 100
       if (game.config.aiSpeed > 100 && game.config.aiSpeed < 200)
@@ -277,6 +310,96 @@ let display = {
         game.config.aiSpeed = 10
       else
         game.config.aiSpeed -= 100
+    })
+
+    display.drawBackButton()
+  },
+  drawBackButton: function () {
+    $('#game-buttons').append(
+      `<span id="back-button" class="game-button"><span>🔙</span></span>`)
+
+    $('#back-button').click(function () {
+      window.location.reload()
+    })
+  },
+  drawCreateChar: function () {
+    $('#create-char').append(
+      `<p>Spend ${game.config.baseStatPoints} Points</p>
+      <label class="char-label" id="emoticon-input-label" for="emoticon-input">Emoticon:</label>
+      <input type="text" class="char-input" id="emoticon-input" name="emoticon-input" maxlength="5" value="${createEmoticon()}">
+      <span id="random-button"><span>🔄</span></span> <br>
+      <label class="char-label" id="health-label" for="char-h">❤️Health:</label>
+      <input type="range" class="char-input" id="char-h" name="char-h" value="0" min="0" max="${game.config.baseMaxHealthPoints}"><span id="h-amount">5</span><br>
+      <label class="char-label" for="char-a">⚔️Attack:</label>
+      <input type="range" class="char-input" id="char-a" name="char-a" value="0" min="0" max="${game.config.baseMaxAttackPoints}"><span id="a-amount">8</span><br>
+      <label class="char-label" for="char-d">🛡️Defence:</label>
+      <input type="range" class="char-input" id="char-d" name="char-d" value="0" min="0" max="${game.config.baseMaxDefencePoints}"><span id="d-amount">7</span><br><br>
+      <div class="nav-button" id="create-char-btn"><span>Create Character</span></div>`)
+
+    $("#create-char-btn").addClass("btn-disable")
+
+    $("#random-button").click(function () {
+      $("#emoticon-input").val(createEmoticon())
+    })
+    $("#emoticon-input").on("input", function () {
+      let totalSpent = +$("#h-amount").text() + +$("#a-amount").text() + +$("#d-amount").text()
+      if (totalSpent >= game.config.baseStatPoints && $("#emoticon-input").val().length > 0)
+        $("#create-char-btn").removeClass("btn-disable")
+      else
+        $("#create-char-btn").addClass("btn-disable")
+    })
+
+    $("#char-h").on("input", function () {
+      let totalSpent = +this.value + +$("#a-amount").text() + +$("#d-amount").text()
+      if (totalSpent >= game.config.baseStatPoints) {
+        let difference = game.config.baseStatPoints - (+$("#a-amount").text() + +$("#d-amount").text())
+        this.value = difference
+        $("#h-amount").text(difference)
+        if ($("#emoticon-input").val().length > 0)
+          $("#create-char-btn").removeClass("btn-disable")
+      } else {
+        $("#h-amount").html(this.value)
+        $("#create-char-btn").addClass("btn-disable")
+      }
+    })
+    $("#char-a").on("input", function () {
+      let totalSpent = +$("#h-amount").text() + +this.value + +$("#d-amount").text()
+      if (totalSpent >= game.config.baseStatPoints) {
+        let difference = game.config.baseStatPoints - (+$("#h-amount").text() + +$("#d-amount").text())
+        this.value = difference
+        $("#a-amount").text(difference)
+        if ($("#emoticon-input").val().length > 0)
+          $("#create-char-btn").removeClass("btn-disable")
+      } else {
+        $("#a-amount").html(this.value)
+        $("#create-char-btn").addClass("btn-disable")
+      }
+    })
+    $("#char-d").on("input", function () {
+      let totalSpent = +$("#h-amount").text() + +$("#a-amount").text() + +this.value
+      if (totalSpent >= game.config.baseStatPoints) {
+        let difference = game.config.baseStatPoints - (+$("#h-amount").text() + +$("#a-amount").text())
+        this.value = difference
+        $("#d-amount").text(difference)
+        if ($("#emoticon-input").val().length > 0)
+          $("#create-char-btn").removeClass("btn-disable")
+      } else {
+        $("#d-amount").html(this.value)
+        $("#create-char-btn").addClass("btn-disable")
+      }
+    })
+
+    $("#create-char-btn").click(function () {
+      let h = +$("#h-amount").text()
+      let a = +$("#a-amount").text()
+      let d = +$("#d-amount").text()
+      let emoticon = $("#emoticon-input").val()
+      let e1 = new Emoticon(emoticon, h, a, d)
+      e1.player = true
+      game.playerEmoticon = e1
+      $('#create-char').hide()
+
+      game.rumble()
     })
   },
   drawGame: function () {
@@ -300,6 +423,7 @@ class Emoticon {
       this.emoticon = emoticon
 
     if (health != undefined && attack != undefined && defence != undefined) {
+      health = (health * game.config.healthMultiplier) + game.config.baseHealth
       this.stats = { health, currentHealth: health, attack, defence }
       this.custom = true
     }
@@ -311,6 +435,7 @@ class Emoticon {
     this.target = null
     this.inCombat = false
     this.attackDirection = null
+    this.player = false
   }
 
   levelUp(e2) {
@@ -486,6 +611,8 @@ function aiFight(e1, e2) {
 
       let status = checkStatus(e1, e2)
       if (status === 'draw') {
+        if (e1.player || e2.player)
+          game.gameOver()
 
         if (e1.level > 2 || e2.level > 2)
           game.spawnEmoticon()
@@ -497,6 +624,9 @@ function aiFight(e1, e2) {
         break
       }
       if (status === 'win') {
+        if (e2.player)
+          game.gameOver()
+
         e1.wins++
         e1.levelUp(e2)
         e1.lifeSteal(e2)
@@ -515,6 +645,9 @@ function aiFight(e1, e2) {
         break
       }
       if (status === 'lose') {
+        if (e1.player)
+          game.gameOver()
+
         e2.wins++
         e2.levelUp(e1)
         e2.lifeSteal(e1)
