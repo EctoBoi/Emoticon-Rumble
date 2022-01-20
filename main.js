@@ -28,6 +28,7 @@ let game = {
     renderSpeed: 33,
     playerFightSpeed: 300,
     playerDamageMitigation: .3,
+    spawnLevelSplit: 1.3,
     aiBaseSpeed: 800,
     aiMaxSpeed: 50,
     aiMoveSpeedModifier: .1,
@@ -151,6 +152,17 @@ let game = {
 
     }
   },
+  startingSpawn: function (type) {
+    if (type === 'player')
+      game.spawnEmoticon(1, game.playerEmoticon)
+
+    let startSpawnAmount = Math.floor((game.config.xTileCount + game.config.yTileCount) / 3)
+    if (startSpawnAmount < 2)
+      startSpawnAmount = 2
+    for (let i = 0; i < startSpawnAmount; i++) {
+      game.spawnEmoticon()
+    }
+  },
   playerControls: function (keyPressed) {
     if (document.body.getAttribute('keypress-listener') !== 'true') {
       document.body.addEventListener('keypress', game.playerControls, false);
@@ -181,9 +193,7 @@ let game = {
     display.leaderboardRenderer.tick()
     display.drawRestartButton()
     display.drawBackButton()
-    game.spawnEmoticon(1, game.playerEmoticon)
-    game.spawnEmoticon()
-    game.spawnEmoticon()
+    game.startingSpawn('player')
     game.playerControls()
   },
   createChar: function () {
@@ -194,8 +204,7 @@ let game = {
     display.drawAIRumbleButtons()
     display.renderer.tick()
     display.leaderboardRenderer.tick()
-    game.spawnEmoticon()
-    game.spawnEmoticon()
+    game.startingSpawn()
   },
   reset() {
     display.renderer.stopTimer()
@@ -309,10 +318,10 @@ let display = {
               if (e1.level >= game.playerEmoticon.level) {
                 let difference = e1.level - game.playerEmoticon.level
                 ctx.strokeStyle = "rgb(55, 155, 255)"
-                let intensity = 1-(e1.level - game.playerEmoticon.level) / 8
+                let intensity = 1 - (e1.level - game.playerEmoticon.level) / 8
                 if (intensity < 0)
                   intensity = 0
-                ctx.strokeStyle = `rgba(${55*intensity}, ${155*intensity}, ${255*intensity})`
+                ctx.strokeStyle = `rgba(${55 * intensity}, ${155 * intensity}, ${255 * intensity})`
               }
               if (e1.level < game.playerEmoticon.level) {
                 for (let i = 0; i < 10; i++) {
@@ -573,7 +582,7 @@ class Emoticon {
       if (lifeSteal < 0)
         lifeSteal = 0
 
-      this.stats.currentHealth += Math.floor(this.stats.health * lifeSteal)
+      this.stats.currentHealth += Math.floor(e2.stats.health * lifeSteal)
       if (this.stats.currentHealth > this.stats.health)
         this.stats.currentHealth = this.stats.health
     } else {
@@ -760,8 +769,8 @@ function fight(e1, e2) {
 
         if (e1.level > 2 || e2.level > 2)
           game.spawnEmoticon()
-        game.spawnEmoticon(Math.floor(e1.level / 2))
-        game.spawnEmoticon(Math.floor(e2.level / 2))
+        game.spawnEmoticon(Math.floor(e1.level / game.config.spawnLevelSplit))
+        game.spawnEmoticon(Math.floor(e2.level / game.config.spawnLevelSplit))
 
         e1.remove()
         e2.remove()
@@ -776,8 +785,8 @@ function fight(e1, e2) {
         e1.lifeSteal(e2)
 
         if (e2.level > 2)
-          game.spawnEmoticon(Math.floor(e2.level / 2))
-        game.spawnEmoticon(Math.floor(e2.level / 2))
+          game.spawnEmoticon(Math.floor(e2.level / game.config.spawnLevelSplit))
+        game.spawnEmoticon(Math.floor(e2.level / game.config.spawnLevelSplit))
 
         if (e2.level > 1)
           game.leaderboard.push(e2)
@@ -797,8 +806,8 @@ function fight(e1, e2) {
         e2.lifeSteal(e1)
 
         if (e1.level > 2)
-          game.spawnEmoticon(Math.floor(e1.level / 2))
-        game.spawnEmoticon(Math.floor(e1.level / 2))
+          game.spawnEmoticon(Math.floor(e1.level / game.config.spawnLevelSplit))
+        game.spawnEmoticon(Math.floor(e1.level / game.config.spawnLevelSplit))
 
         if (e1.level > 1)
           game.leaderboard.push(e1)
@@ -833,7 +842,7 @@ function attack(e1, e2) {
   if (hitChance > blockChance) {
     let hit = e1.stats.attack + roll
     if (e2.player)
-      hit = Math.floor(hit * (1-game.config.playerDamageMitigation))
+      hit = Math.floor(hit * (1 - game.config.playerDamageMitigation))
     e2.stats.currentHealth = e2.stats.currentHealth - hit
     return {
       result: 'hit',
