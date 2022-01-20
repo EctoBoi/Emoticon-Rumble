@@ -26,7 +26,9 @@ let game = {
     baseMaxDefencePoints: 10,
     lifeStealModifier: .05,
     renderSpeed: 33,
-    aiSpeed: 1000,
+    aiBaseSpeed: 1000,
+    aiMaxSpeed: 50,
+    aiMoveSpeedModifier: .05,
     xTileCount: 8,
     yTileCount: 8,
   },
@@ -51,7 +53,16 @@ let game = {
 
         if (!thisTimer.emoticon.inCombat)
           thisTimer.emoticon.moveToTarget()
-        this.timer = window.setTimeout(thisTimer.tick, game.config.aiSpeed + getRandomInt(100), thisTimer);
+
+        let moveSpeedMultiplier = 1 - (thisTimer.emoticon.level * game.config.aiMoveSpeedModifier)
+        let moveSpeed = Math.floor((game.config.aiBaseSpeed * moveSpeedMultiplier) + getRandomInt(100))
+        if (moveSpeed < game.config.aiMaxSpeed)
+          moveSpeed = game.config.aiMaxSpeed
+
+        thisTimer.timer = window.setTimeout(thisTimer.tick, moveSpeed, thisTimer);
+      },
+      stopTimer: function () {
+        clearTimeout(this.timer)
       }
     }
     timer.tick()
@@ -60,7 +71,7 @@ let game = {
   removeAIMoveTimer: function (e1) {
     game.aiMoveTimers.forEach(t => {
       if (t.emoticon === e1) {
-        clearTimeout(t.timer)
+        t.stopTimer()
         const index = game.aiMoveTimers.indexOf(t)
         if (index > -1) {
           game.aiMoveTimers.splice(index, 1)
@@ -232,16 +243,32 @@ let display = {
           let e1 = game.board[y][x]
           ctx.fillStyle = "black"
           //Level Border
-          if (e1.level > 4) {
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = "#99ff99";
-            if (e1.level > 9)
-              ctx.strokeStyle = "#3399ff";
-            if (e1.level > 14)
-              ctx.strokeStyle = "#ff66ff";
-            if (e1.level > 19)
-              ctx.strokeStyle = "#ff3333";
-            ctx.strokeRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize);
+          if (game.playerEmoticon === null) {
+            if (e1.level > 4) {
+              ctx.lineWidth = 3;
+              ctx.strokeStyle = "#99ff99";
+              if (e1.level > 9)
+                ctx.strokeStyle = "#3399ff";
+              if (e1.level > 14)
+                ctx.strokeStyle = "#ff66ff";
+              if (e1.level > 19)
+                ctx.strokeStyle = "#ff3333";
+              ctx.strokeRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize);
+            }
+          } else {
+            if (e1.level > 4 || e1.player) {
+              ctx.lineWidth = 3;
+              ctx.strokeStyle = "#99ff99";
+              if (e1.level > 9)
+                ctx.strokeStyle = "#3399ff";
+              if (e1.level > 14)
+                ctx.strokeStyle = "#ff66ff";
+              if (e1.level > 19)
+                ctx.strokeStyle = "#ff3333";
+              if (e1.player)
+                ctx.strokeStyle = "#ffff33";
+              ctx.strokeRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize);
+            }
           }
           //Stats
           ctx.font = "11px Verdana"
@@ -294,16 +321,16 @@ let display = {
 
     $('#leaderboard').text('')
 
-    let fightersToShow = leaderboard.length < 10 ? leaderboard.length : 10
+    let amountToShow = leaderboard.length < 10 ? leaderboard.length : 10
     let output = ''
-    for (let i = 0; i < fightersToShow; i++) {
+    for (let i = 0; i < amountToShow; i++) {
       output += `<div style="display: inline-block;"><div style="display: inline-block; width:53px;">#${i + 1}${i === 0 ? '👑' : ''}: </div>
       <div class="emoticon">${leaderboard[i].emoticon}</div> ⭐${leaderboard[i].level} 🏆:${leaderboard[i].wins} ❤️:${leaderboard[i].stats.health} ⚔️:${leaderboard[i].stats.attack} 🛡️:${leaderboard[i].stats.defence}</div><br>`
     }
 
     output += `<br><br>`
-    fightersToShow = leaderboard.length < 1000 ? leaderboard.length : 1000
-    for (let i = 0; i < fightersToShow; i++) {
+    amountToShow = leaderboard.length < 1000 ? leaderboard.length : 1000
+    for (let i = 0; i < amountToShow; i++) {
       output += `<div class="emoticon">${leaderboard[i].emoticon}</div>&nbsp;&nbsp;&nbsp;`
     }
 
@@ -315,15 +342,15 @@ let display = {
       <span id="faster-button" class="game-button"><span>🐇</span></span>`)
 
     $('#slower-button').click(function () {
-      game.config.aiSpeed += 100
-      if (game.config.aiSpeed > 100 && game.config.aiSpeed < 200)
-        game.config.aiSpeed = 100
+      game.config.aiBaseSpeed += 100
+      if (game.config.aiBaseSpeed > 100 && game.config.aiBaseSpeed < 200)
+        game.config.aiBaseSpeed = 100
     })
     $('#faster-button').click(function () {
-      if (game.config.aiSpeed < 200)
-        game.config.aiSpeed = 10
+      if (game.config.aiBaseSpeed < 200)
+        game.config.aiBaseSpeed = game.config.aiMaxSpeed
       else
-        game.config.aiSpeed -= 100
+        game.config.aiBaseSpeed -= 100
     })
 
     display.drawBackButton()
@@ -579,7 +606,7 @@ class Emoticon {
             if (pos[1] - moveY < 0)
               this.attackDirection = 'S'
 
-            aiFight(this, game.board[moveY][moveX])
+            fight(this, game.board[moveY][moveX])
           }
         }
 
@@ -607,7 +634,7 @@ class Emoticon {
             if (pos[1] - moveY < 0)
               this.attackDirection = 'S'
 
-            aiFight(this, game.board[moveY][moveX])
+            fight(this, game.board[moveY][moveX])
           }
         }
       }
@@ -642,16 +669,16 @@ class Emoticon {
         if (pos[1] - moveY < 0)
           this.attackDirection = 'S'
 
-        aiFight(this, game.board[moveY][moveX])
+        fight(this, game.board[moveY][moveX])
       }
     }
   }
 }
 
-function aiFight(e1, e2) {
+function fight(e1, e2) {
   e1.inCombat = true
   e2.inCombat = true
-  let fight = function (e1, e2) {
+  let currentFight = function (e1, e2) {
     while (true) {
       attack(e1, e2)
       attack(e2, e1)
@@ -713,7 +740,10 @@ function aiFight(e1, e2) {
       }
     }
   }
-  window.setTimeout(fight, game.config.aiSpeed, e1, e2)
+  let fightSpeed = game.config.aiBaseSpeed
+  if (e1.player || e2.player)
+    fightSpeed = 300
+  window.setTimeout(currentFight, fightSpeed, e1, e2)
 }
 
 function attack(e1, e2) {
