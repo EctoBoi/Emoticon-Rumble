@@ -26,7 +26,7 @@ let game = {
     baseMaxDefencePoints: 10,
     lifeStealModifier: .05,
     renderSpeed: 33,
-    aiSpeed: 100,
+    aiSpeed: 1000,
     xTileCount: 8,
     yTileCount: 8,
   },
@@ -35,37 +35,11 @@ let game = {
   board: [],
   leaderboard: [],
   aiMoveTimers: [],
-  leaderboardRenderer: {
-    tickNumber: 0,
-    timer: null,
-    tick: function () {
-      display.drawLeaderboard()
-      game.leaderboardRenderer.tickNumber++
-      game.leaderboardRenderer.timer = window.setTimeout('game.leaderboardRenderer.tick()', 2000)
-    },
-    stopTimer: function () {
-      game.leaderboardRenderer.tickNumber = 0
-      clearTimeout(game.leaderboardRenderer.timer)
-    }
-  },
   createBoard: function () {
     game.config.xTileCount = Math.floor((window.innerWidth - 20) / display.tileSize)
     game.config.yTileCount = Math.floor((window.innerHeight - 58) / display.tileSize)
 
     game.board = Array(game.config.yTileCount).fill(null).map(() => new Array(game.config.xTileCount).fill(null))
-  },
-  renderer: {
-    tickNumber: 0,
-    timer: null,
-    tick: function () {
-      display.drawGame()
-      game.renderer.tickNumber++
-      game.renderer.timer = window.setTimeout('game.renderer.tick()', game.config.renderSpeed)
-    },
-    stopTimer: function () {
-      game.renderer.tickNumber = 0
-      clearTimeout(game.renderer.timer)
-    }
   },
   createAIMoveTimer: function (e1) {
     let timer = {
@@ -151,13 +125,28 @@ let game = {
 
     }
   },
-  playerControls: function () {
-    
+  playerControls: function (keyPressed) {
+    if (document.body.getAttribute('keypress-listener') !== 'true') {
+      document.body.addEventListener('keypress', game.playerControls, false);
+      document.body.setAttribute('keypress-listener', 'true');
+    } else {
+
+      let key = keyPressed.key.toLowerCase();
+
+      if (key === "w")
+        game.playerEmoticon.move('N')
+      if (key === "a")
+        game.playerEmoticon.move('W')
+      if (key === "s")
+        game.playerEmoticon.move('S')
+      if (key === "d")
+        game.playerEmoticon.move('E')
+    }
   },
   rumble: function () {
     game.createBoard()
-    game.renderer.tick()
-    game.leaderboardRenderer.tick()
+    display.renderer.tick()
+    display.leaderboardRenderer.tick()
     game.spawnEmoticon(1, game.playerEmoticon)
     game.spawnEmoticon()
     game.spawnEmoticon()
@@ -169,8 +158,8 @@ let game = {
   aiRumble: function () {
     game.createBoard()
     display.drawAIRumbleButtons()
-    game.renderer.tick()
-    game.leaderboardRenderer.tick()
+    display.renderer.tick()
+    display.leaderboardRenderer.tick()
     game.spawnEmoticon()
     game.spawnEmoticon()
   },
@@ -190,6 +179,32 @@ let display = {
     }
   },
   tileSize: 80,
+  leaderboardRenderer: {
+    tickNumber: 0,
+    timer: null,
+    tick: function () {
+      display.drawLeaderboard()
+      display.leaderboardRenderer.tickNumber++
+      display.leaderboardRenderer.timer = window.setTimeout('display.leaderboardRenderer.tick()', 2000)
+    },
+    stopTimer: function () {
+      display.leaderboardRenderer.tickNumber = 0
+      clearTimeout(display.leaderboardRenderer.timer)
+    }
+  },
+  renderer: {
+    tickNumber: 0,
+    timer: null,
+    tick: function () {
+      display.drawGame()
+      display.renderer.tickNumber++
+      display.renderer.timer = window.setTimeout('display.renderer.tick()', game.config.renderSpeed)
+    },
+    stopTimer: function () {
+      display.renderer.tickNumber = 0
+      clearTimeout(display.renderer.timer)
+    }
+  },
   drawBoard: function (ctx) {
     for (let y = 0; y < game.config.yTileCount; y++) {
       for (let x = 0; x < game.config.xTileCount; x++) {
@@ -258,7 +273,6 @@ let display = {
 
     if (game.gameOverState) {
       let gameOverText = 'Game Over'
-      let frame = game.renderer.tickNumber % game.config.renderSpeed
 
       ctx.fillStyle = 'black'
       ctx.font = 'bold ' + Math.floor(ctx.canvas.clientWidth / 9.5) + 'px Verdana'
@@ -596,6 +610,39 @@ class Emoticon {
             aiFight(this, game.board[moveY][moveX])
           }
         }
+      }
+    }
+  }
+
+  move(direction) {
+    let pos = this.getPosition()
+    let moveX = pos[0]
+    let moveY = pos[1]
+
+    if (direction === 'W')
+      moveX--
+    else if (direction === 'E')
+      moveX++
+    else if (direction === 'N')
+      moveY--
+    else if (direction === 'S')
+      moveY++
+
+    if (game.isEmpty(moveX, moveY)) {
+      game.board[pos[1]][pos[0]] = null
+      game.board[moveY][moveX] = this
+    } else if (game.isEmoticon(moveX, moveY)) {
+      if (!game.board[moveY][moveX].inCombat) {
+        if (pos[0] - moveX > 0)
+          this.attackDirection = 'W'
+        if (pos[0] - moveX < 0)
+          this.attackDirection = 'E'
+        if (pos[1] - moveY > 0)
+          this.attackDirection = 'N'
+        if (pos[1] - moveY < 0)
+          this.attackDirection = 'S'
+
+        aiFight(this, game.board[moveY][moveX])
       }
     }
   }
