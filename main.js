@@ -34,6 +34,7 @@ let game = {
     yTileCount: 8,
   },
   playerEmoticon: null,
+  lastCharStats: null,
   gameOverState: false,
   board: [],
   leaderboard: [],
@@ -155,16 +156,18 @@ let game = {
       document.body.setAttribute('keypress-listener', 'true');
     } else {
 
-      let key = keyPressed.key.toLowerCase();
+      if (keyPressed) {
+        let key = keyPressed.key.toLowerCase();
 
-      if (key === "w")
-        game.playerEmoticon.move('N')
-      if (key === "a")
-        game.playerEmoticon.move('W')
-      if (key === "s")
-        game.playerEmoticon.move('S')
-      if (key === "d")
-        game.playerEmoticon.move('E')
+        if (key === "w")
+          game.playerEmoticon.move('N')
+        if (key === "a")
+          game.playerEmoticon.move('W')
+        if (key === "s")
+          game.playerEmoticon.move('S')
+        if (key === "d")
+          game.playerEmoticon.move('E')
+      }
     }
   },
   removePlayerControls: function () {
@@ -175,6 +178,8 @@ let game = {
     game.createBoard()
     display.renderer.tick()
     display.leaderboardRenderer.tick()
+    display.drawRestartButton()
+    display.drawBackButton()
     game.spawnEmoticon(1, game.playerEmoticon)
     game.spawnEmoticon()
     game.spawnEmoticon()
@@ -216,7 +221,6 @@ let game = {
   gameOver: function () {
     game.gameOverState = true
     game.removePlayerControls()
-    display.drawBackButton()
   }
 }
 
@@ -396,26 +400,35 @@ let display = {
     display.drawBackButton()
   },
   drawBackButton: function () {
-    $('#game-buttons').append(
-      `<span id="back-button" class="game-button"><span>🔙</span></span>`)
+    $('#game-buttons').append(`<span id="back-button" class="game-button"><span>🔙</span></span>`)
 
     $('#back-button').click(function () {
       game.reset()
       $('#nav').show()
     })
   },
+  drawRestartButton: function () {
+    $('#game-buttons').append(`<span id="restart-button" class="game-button"><span>🔄</span></span>`)
+
+    $('#restart-button').click(function () {
+      game.playerEmoticon = new Emoticon(game.lastCharStats.emoticon, game.lastCharStats.health, game.lastCharStats.attack, game.lastCharStats.defence)
+      game.playerEmoticon.player = true
+      game.reset()
+      game.rumble()
+    })
+  },
   drawCreateChar: function () {
     $('#create-char').append(
-      `<p>Spend ${game.config.baseStatPoints} Points</p>
+      `<h3>Spend ${game.config.baseStatPoints} Points</h3>
       <label class="char-label" id="emoticon-input-label" for="emoticon-input">Emoticon:</label>
       <input type="text" class="char-input" id="emoticon-input" name="emoticon-input" maxlength="5" value="${createEmoticon()}">
       <span id="random-button"><span>🔄</span></span> <br>
       <label class="char-label" id="health-label" for="char-h">❤️Health:</label>
-      <input type="range" class="char-input" id="char-h" name="char-h" value="0" min="0" max="${game.config.baseMaxHealthPoints}"><span id="h-amount">5</span><br>
+      <input type="range" class="char-input" id="char-h" name="char-h" value="0" min="0" max="${game.config.baseMaxHealthPoints}"><span id="h-amount">0</span><br>
       <label class="char-label" for="char-a">⚔️Attack:</label>
-      <input type="range" class="char-input" id="char-a" name="char-a" value="0" min="0" max="${game.config.baseMaxAttackPoints}"><span id="a-amount">8</span><br>
+      <input type="range" class="char-input" id="char-a" name="char-a" value="0" min="0" max="${game.config.baseMaxAttackPoints}"><span id="a-amount">0</span><br>
       <label class="char-label" for="char-d">🛡️Defence:</label>
-      <input type="range" class="char-input" id="char-d" name="char-d" value="0" min="0" max="${game.config.baseMaxDefencePoints}"><span id="d-amount">7</span><br><br>
+      <input type="range" class="char-input" id="char-d" name="char-d" value="0" min="0" max="${game.config.baseMaxDefencePoints}"><span id="d-amount">0</span><br><br>
       <div class="nav-button" id="create-char-btn"><span>Create Character</span></div>`)
 
     $("#create-char-btn").addClass("btn-disable")
@@ -479,8 +492,9 @@ let display = {
       let e1 = new Emoticon(emoticon, h, a, d)
       e1.player = true
       game.playerEmoticon = e1
-      $('#create-char').text('')
+      game.lastCharStats = { emoticon, health: h, attack: a, defence: d }
 
+      $('#create-char').text('')
       game.rumble()
     })
   },
@@ -881,4 +895,27 @@ function createEmoticon() {
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * max)
+}
+
+function setCookie(cname, cvalue, exdays) {
+  const d = new Date();
+  d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+  let expires = "expires=" + d.toUTCString();
+  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}
+
+function getCookie(cname) {
+  let name = cname + "=";
+  let decodedCookie = decodeURIComponent(document.cookie);
+  let ca = decodedCookie.split(';');
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
 }
