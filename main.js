@@ -27,9 +27,10 @@ let game = {
     lifeStealModifier: .05,
     renderSpeed: 33,
     playerFightSpeed: 300,
-    aiBaseSpeed: 1000,
+    playerDamageMitigation: .3,
+    aiBaseSpeed: 800,
     aiMaxSpeed: 50,
-    aiMoveSpeedModifier: .05,
+    aiMoveSpeedModifier: .1,
     xTileCount: 8,
     yTileCount: 8,
   },
@@ -123,13 +124,13 @@ let game = {
     return null
   },
   spawnEmoticon: function (level, e1) {
-    let spawnLimit = Math.floor(((game.config.xTileCount + game.config.yTileCount) / 2))
+    let spawnLimit = Math.floor((game.config.xTileCount + game.config.yTileCount) / 2)
     if (level === undefined || level < 1) {
       level = 1
     }
     if (game.aiMoveTimers.length < spawnLimit) {
       let spawnAttempts = 20
-      while (spawnAttempts >= 0) {
+      while (spawnAttempts > 0) {
         let posX = getRandomInt(game.config.xTileCount)
         let posY = getRandomInt(game.config.yTileCount)
         if (game.isEmpty(posX, posY) && !game.isEmoticon(posX + 1, posY) && !game.isEmoticon(posX, posY + 1) && !game.isEmoticon(posX - 1, posY) && !game.isEmoticon(posX, posY - 1)) {
@@ -211,6 +212,7 @@ let game = {
 
     game.config.aiBaseSpeed = 1000
     game.gameOverState = false
+    game.playerEmoticon = null
     game.board = []
     game.leaderboard = []
     $('#display').text('')
@@ -286,32 +288,41 @@ let display = {
         if (game.isEmoticon(x, y)) {
           let e1 = game.board[y][x]
           ctx.fillStyle = "black"
+          ctx.lineWidth = 3;
           //Level Border
           if (game.playerEmoticon === null) {
             if (e1.level > 4) {
-              ctx.lineWidth = 3;
-              ctx.strokeStyle = "#99ff99";
+              ctx.strokeStyle = "#99ff99"
               if (e1.level > 9)
-                ctx.strokeStyle = "#3399ff";
+                ctx.strokeStyle = "#3399ff"
               if (e1.level > 14)
-                ctx.strokeStyle = "#ff66ff";
+                ctx.strokeStyle = "#ff66ff"
               if (e1.level > 19)
-                ctx.strokeStyle = "#ff3333";
-              ctx.strokeRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize);
+                ctx.strokeStyle = "#ff3333"
+              ctx.strokeRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize)
             }
           } else {
-            if (e1.level > 4 || e1.player) {
-              ctx.lineWidth = 3;
-              ctx.strokeStyle = "#99ff99";
-              if (e1.level > 9)
-                ctx.strokeStyle = "#3399ff";
-              if (e1.level > 14)
-                ctx.strokeStyle = "#ff66ff";
-              if (e1.level > 19)
-                ctx.strokeStyle = "#ff3333";
-              if (e1.player)
-                ctx.strokeStyle = "#ffff33";
-              ctx.strokeRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize);
+            if (e1.player) {
+              ctx.strokeStyle = "#ffff33"
+              ctx.strokeRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize)
+            } else {
+              if (e1.level >= game.playerEmoticon.level) {
+                let difference = e1.level - game.playerEmoticon.level
+                ctx.strokeStyle = "rgb(55, 155, 255)"
+                let intensity = 1-(e1.level - game.playerEmoticon.level) / 8
+                if (intensity < 0)
+                  intensity = 0
+                ctx.strokeStyle = `rgba(${55*intensity}, ${155*intensity}, ${255*intensity})`
+              }
+              if (e1.level < game.playerEmoticon.level) {
+                for (let i = 0; i < 10; i++) {
+                  let intensity = 1 - ((game.playerEmoticon.level - e1.level) / 10)
+                  if (intensity < 0)
+                    intensity = 0
+                  ctx.strokeStyle = `rgba(55, 155, 255, ${intensity})`
+                }
+              }
+              ctx.strokeRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize)
             }
           }
           //Stats
@@ -411,9 +422,9 @@ let display = {
     $('#game-buttons').append(`<span id="restart-button" class="game-button"><span>🔄</span></span>`)
 
     $('#restart-button').click(function () {
+      game.reset()
       game.playerEmoticon = new Emoticon(game.lastCharStats.emoticon, game.lastCharStats.health, game.lastCharStats.attack, game.lastCharStats.defence)
       game.playerEmoticon.player = true
-      game.reset()
       game.rumble()
     })
   },
@@ -697,34 +708,36 @@ class Emoticon {
   }
 
   move(direction) {
-    let pos = this.getPosition()
-    let moveX = pos[0]
-    let moveY = pos[1]
+    if (!this.inCombat) {
+      let pos = this.getPosition()
+      let moveX = pos[0]
+      let moveY = pos[1]
 
-    if (direction === 'W')
-      moveX--
-    else if (direction === 'E')
-      moveX++
-    else if (direction === 'N')
-      moveY--
-    else if (direction === 'S')
-      moveY++
+      if (direction === 'W')
+        moveX--
+      else if (direction === 'E')
+        moveX++
+      else if (direction === 'N')
+        moveY--
+      else if (direction === 'S')
+        moveY++
 
-    if (game.isEmpty(moveX, moveY)) {
-      game.board[pos[1]][pos[0]] = null
-      game.board[moveY][moveX] = this
-    } else if (game.isEmoticon(moveX, moveY)) {
-      if (!game.board[moveY][moveX].inCombat) {
-        if (pos[0] - moveX > 0)
-          this.attackDirection = 'W'
-        if (pos[0] - moveX < 0)
-          this.attackDirection = 'E'
-        if (pos[1] - moveY > 0)
-          this.attackDirection = 'N'
-        if (pos[1] - moveY < 0)
-          this.attackDirection = 'S'
+      if (game.isEmpty(moveX, moveY)) {
+        game.board[pos[1]][pos[0]] = null
+        game.board[moveY][moveX] = this
+      } else if (game.isEmoticon(moveX, moveY)) {
+        if (!game.board[moveY][moveX].inCombat) {
+          if (pos[0] - moveX > 0)
+            this.attackDirection = 'W'
+          if (pos[0] - moveX < 0)
+            this.attackDirection = 'E'
+          if (pos[1] - moveY > 0)
+            this.attackDirection = 'N'
+          if (pos[1] - moveY < 0)
+            this.attackDirection = 'S'
 
-        fight(this, game.board[moveY][moveX])
+          fight(this, game.board[moveY][moveX])
+        }
       }
     }
   }
@@ -819,6 +832,8 @@ function attack(e1, e2) {
     blockChance = game.config.blockLimit
   if (hitChance > blockChance) {
     let hit = e1.stats.attack + roll
+    if (e2.player)
+      hit = Math.floor(hit * (1-game.config.playerDamageMitigation))
     e2.stats.currentHealth = e2.stats.currentHealth - hit
     return {
       result: 'hit',
