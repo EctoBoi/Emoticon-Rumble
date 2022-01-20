@@ -240,8 +240,19 @@ let display = {
     timer: null,
     tick: function () {
       $('#title').empty()
-      $('#title').append(`${createEmoticon()} [Emoticon] [Rumble] ${createEmoticon()}`)
-      display.titleTimer.timer = window.setTimeout('display.titleTimer.tick()', 4000)
+      let titleTimerSpeed = 4000
+      if (game.playerEmoticon !== null) {
+        $('#title').append(`[Emoticon]&nbsp;&nbsp;&nbsp;&nbsp;❤️${game.playerEmoticon.stats.currentHealth}⚔️${game.playerEmoticon.stats.attack}🛡️${game.playerEmoticon.stats.defence}&nbsp;&nbsp;&nbsp;&nbsp;[Rumble]`)
+        titleTimerSpeed = 33
+      }
+      else {
+        $('#title').append(`${createEmoticon()} [Emoticon] [Rumble] ${createEmoticon()}`)
+      }
+      display.titleTimer.timer = window.setTimeout('display.titleTimer.tick()', titleTimerSpeed)
+    },
+    stopTimer: function () {
+      display.titleTimer.tickNumber = 0
+      clearTimeout(display.titleTimer.timer)
     }
   },
   tileSize: 80,
@@ -389,7 +400,7 @@ let display = {
     let output = ''
     for (let i = 0; i < amountToShow; i++) {
       output += `<div style="display: inline-block;"><div style="display: inline-block; width:53px;">#${i + 1}${i === 0 ? '👑' : ''}: </div>
-      <div class="emoticon">${leaderboard[i].emoticon}</div> ⭐${leaderboard[i].level} 🏆:${leaderboard[i].wins} ❤️:${leaderboard[i].stats.health} ⚔️:${leaderboard[i].stats.attack} 🛡️:${leaderboard[i].stats.defence}</div><br>`
+      <div class="emoticon">${leaderboard[i].emoticon}</div> ⭐${leaderboard[i].level} 🏆:${leaderboard[i].wins} ❤️:${leaderboard[i].stats.health} ⚔️:${leaderboard[i].stats.attack} 🛡️:${leaderboard[i].stats.defence}  ${leaderboard[i].player ? '👈' : ''}</div><br>`
     }
 
     output += `<br><br>`
@@ -514,6 +525,8 @@ let display = {
       game.playerEmoticon = e1
       game.lastCharStats = { emoticon, health: h, attack: a, defence: d }
 
+      display.titleTimer.stopTimer()
+      display.titleTimer.tick()
       $('#create-char').text('')
       game.rumble()
     })
@@ -771,6 +784,11 @@ function fight(e1, e2) {
           game.spawnEmoticon()
         game.spawnEmoticon(Math.floor(e1.level / game.config.spawnLevelSplit))
         game.spawnEmoticon(Math.floor(e2.level / game.config.spawnLevelSplit))
+
+        if (e1.level > 1)
+          game.leaderboard.push(e1)
+        if (e2.level > 1)
+          game.leaderboard.push(e2)
 
         e1.remove()
         e2.remove()
