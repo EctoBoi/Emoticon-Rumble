@@ -466,7 +466,7 @@ let display = {
   },
   drawCreateChar() {
     $('#create-char').append(
-      `<h3>Spend ${game.config.baseStatPoints} Points</h3>
+      `<h3 id="points-to-spend">Spend ${game.config.baseStatPoints} Points</h3>
       <label class="char-label" id="emoticon-input-label" for="emoticon-input">Emoticon:</label>
       <input type="text" class="char-input" id="emoticon-input" name="emoticon-input" maxlength="5" value="${createEmoticon()}">
       <span id="random-button"><span>🔄</span></span> <br>
@@ -493,6 +493,9 @@ let display = {
 
     $("#char-h").on("input", function () {
       let totalSpent = +this.value + +$("#a-amount").text() + +$("#d-amount").text()
+      if (totalSpent <= 20)
+        $("#points-to-spend").html(`Spend ${20 - totalSpent} Points`)
+
       if (totalSpent >= game.config.baseStatPoints) {
         let difference = game.config.baseStatPoints - (+$("#a-amount").text() + +$("#d-amount").text())
         this.value = difference
@@ -506,6 +509,9 @@ let display = {
     })
     $("#char-a").on("input", function () {
       let totalSpent = +$("#h-amount").text() + +this.value + +$("#d-amount").text()
+      if (totalSpent <= 20)
+        $("#points-to-spend").html(`Spend ${20 - totalSpent} Points`)
+
       if (totalSpent >= game.config.baseStatPoints) {
         let difference = game.config.baseStatPoints - (+$("#h-amount").text() + +$("#d-amount").text())
         this.value = difference
@@ -519,6 +525,9 @@ let display = {
     })
     $("#char-d").on("input", function () {
       let totalSpent = +$("#h-amount").text() + +$("#a-amount").text() + +this.value
+      if (totalSpent <= 20)
+        $("#points-to-spend").html(`Spend ${20 - totalSpent} Points`)
+
       if (totalSpent >= game.config.baseStatPoints) {
         let difference = game.config.baseStatPoints - (+$("#h-amount").text() + +$("#a-amount").text())
         this.value = difference
