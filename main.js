@@ -493,8 +493,8 @@ let display = {
 
     $("#char-h").on("input", function () {
       let totalSpent = +this.value + +$("#a-amount").text() + +$("#d-amount").text()
-      if (totalSpent <= 20)
-        $("#points-to-spend").html(`Spend ${20 - totalSpent} Points`)
+
+      $("#points-to-spend").html(`Spend ${totalSpent <= 20 ? 20 - totalSpent : 0} Points`)
 
       if (totalSpent >= game.config.baseStatPoints) {
         let difference = game.config.baseStatPoints - (+$("#a-amount").text() + +$("#d-amount").text())
@@ -509,8 +509,8 @@ let display = {
     })
     $("#char-a").on("input", function () {
       let totalSpent = +$("#h-amount").text() + +this.value + +$("#d-amount").text()
-      if (totalSpent <= 20)
-        $("#points-to-spend").html(`Spend ${20 - totalSpent} Points`)
+
+      $("#points-to-spend").html(`Spend ${totalSpent <= 20 ? 20 - totalSpent : 0} Points`)
 
       if (totalSpent >= game.config.baseStatPoints) {
         let difference = game.config.baseStatPoints - (+$("#h-amount").text() + +$("#d-amount").text())
@@ -525,8 +525,8 @@ let display = {
     })
     $("#char-d").on("input", function () {
       let totalSpent = +$("#h-amount").text() + +$("#a-amount").text() + +this.value
-      if (totalSpent <= 20)
-        $("#points-to-spend").html(`Spend ${20 - totalSpent} Points`)
+
+      $("#points-to-spend").html(`Spend ${totalSpent <= 20 ? 20 - totalSpent : 0} Points`)
 
       if (totalSpent >= game.config.baseStatPoints) {
         let difference = game.config.baseStatPoints - (+$("#h-amount").text() + +$("#a-amount").text())
@@ -804,7 +804,23 @@ function fight(e1, e2) {
   e1.inCombat = true
   e2.inCombat = true
 
-  let currentFight = function (e1, e2, fightTimer) {
+  let aiFight = function (e1, e2, fightTimer) {
+    game.removeFightTimer(fightTimer)
+
+    while (true) {
+      attack(e1, e2)
+      attack(e2, e1)
+
+      let status = checkStatus(e1, e2)
+
+      if (status) {
+        fightOutcome(e1, e2, status)
+        break
+      }
+    }
+  }
+
+  let playerFight = function (e1, e2) {
     game.removeFightTimer(fightTimer)
 
     while (true) {
@@ -822,17 +838,18 @@ function fight(e1, e2) {
 
   let fightSpeed = game.aiSpeed
 
-  if (e1.player || e2.player)
+  if (e1.player || e2.player) //{
     fightSpeed = game.config.playerFightSpeed
-
+  //} else {
   let fightTimer = {
     timer: null,
     stopTimer: function () {
       clearTimeout(this.timer)
     }
   }
-  fightTimer.timer = window.setTimeout(currentFight, fightSpeed, e1, e2, fightTimer)
+  fightTimer.timer = window.setTimeout(aiFight, fightSpeed, e1, e2, fightTimer)
   game.fightTimers.push(fightTimer)
+  //}
 }
 
 function attack(e1, e2) {
