@@ -592,6 +592,7 @@ class Emoticon {
     this.target = null
     this.inCombat = false
     this.attackDirection = null
+    this.attackerDirection = null
     this.player = false
   }
 
@@ -749,7 +750,7 @@ class Emoticon {
         if (game.isEmpty(moveX, moveY)) {
           game.board[pos[1]][pos[0]] = null
           game.board[moveY][moveX] = this
-        } else if (game.isEmoticon(moveX, moveY)) {
+        } /*else if (game.isEmoticon(moveX, moveY)) {
           if (!game.board[moveY][moveX].inCombat) {
             if (pos[0] - moveX > 0)
               this.attackDirection = 'W'
@@ -762,7 +763,7 @@ class Emoticon {
 
             fight(this, game.board[moveY][moveX])
           }
-        }
+        }*/
       }
     }
   }
@@ -807,6 +808,15 @@ function fight(e1, e2) {
   e1.inCombat = true
   e2.inCombat = true
 
+  if (e1.attackDirection === 'N')
+    e2.attackerDirection = 'S'
+  if (e1.attackDirection === 'S')
+    e2.attackerDirection = 'N'
+  if (e1.attackDirection === 'E')
+    e2.attackerDirection = 'W'
+  if (e1.attackDirection === 'W')
+    e2.attackerDirection = 'E'
+
   let aiFight = function (e1, e2, fightTimer) {
     game.removeFightTimer(fightTimer)
 
@@ -817,6 +827,8 @@ function fight(e1, e2) {
       let status = checkStatus(e1, e2)
 
       if (status) {
+        e1.attackDirection = null
+        e2.attackerDirection = null
         fightOutcome(e1, e2, status)
         break
       }
