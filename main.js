@@ -32,7 +32,7 @@ let game = {
     playerDamageMitigation: .1,
     spawnLevelSplit: 1.3,
     aiBaseSpeed: 1000,
-    aiMaxSpeed: 50,
+    aiMaxSpeed: 10,
     aiBaseMoveSpeedModifier: .04,
     renderSpeed: 33,
     xTileCount: 8,
@@ -414,6 +414,10 @@ let display = {
         return 1
       return 0
     })
+    if(leaderboard.length>1000){
+      leaderboard.splice(1000,leaderboard.length-1000)
+      game.leaderboard = leaderboard
+    }
 
     $('#leaderboard').text('')
 
