@@ -32,7 +32,7 @@ let game = {
     playerDamageMitigation: .1,
     spawnLevelSplit: 1.3,
     aiBaseSpeed: 1000,
-    aiMaxSpeed: 10,
+    aiMaxSpeed: 50,
     aiBaseMoveSpeedModifier: .04,
     renderSpeed: 33,
     xTileCount: 8,
@@ -414,8 +414,8 @@ let display = {
         return 1
       return 0
     })
-    if(leaderboard.length>1000){
-      leaderboard.splice(1000,leaderboard.length-1000)
+    if (leaderboard.length > 1000) {
+      leaderboard.splice(1000, leaderboard.length - 1000)
       game.leaderboard = leaderboard
     }
 
@@ -425,12 +425,11 @@ let display = {
     let output = ''
     for (let i = 0; i < amountToShow; i++) {
       output += `<div style="display: inline-block;"><div style="display: inline-block; width:53px;">#${i + 1}${i === 0 ? '👑' : ''}: </div>
-      <div class="emoticon">${leaderboard[i].emoticon}</div> 🏆:${leaderboard[i].wins} ⭐${leaderboard[i].level} ❤️:${leaderboard[i].stats.health} ⚔️:${leaderboard[i].stats.attack} 🛡️:${leaderboard[i].stats.defence}  ${leaderboard[i].player ? '👈' : ''}</div><br>`
+      <div class="emoticon">${leaderboard[i].emoticon}</div> 🏆:${leaderboard[i].wins} ⭐:${leaderboard[i].level} ❤️:${leaderboard[i].stats.health} ⚔️:${leaderboard[i].stats.attack} 🛡️:${leaderboard[i].stats.defence}  ${leaderboard[i].player ? '👈' : ''}</div><br>`
     }
 
     output += `<br><br>`
-    amountToShow = leaderboard.length < 1000 ? leaderboard.length : 1000
-    for (let i = 0; i < amountToShow; i++) {
+    for (let i = 0; i < leaderboard.length; i++) {
       output += `<div class="emoticon">${leaderboard[i].emoticon}</div>&nbsp;&nbsp;&nbsp;`
     }
 
