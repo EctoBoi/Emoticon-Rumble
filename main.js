@@ -163,28 +163,36 @@ let game = {
       game.spawnEmoticon()
     }
   },
-  playerControls: function (keyPressed) {
+  playerControls: function (event) {
     if (document.body.getAttribute('keypress-listener') !== 'true') {
-      document.body.addEventListener('keypress', game.playerControls, false);
+      document.body.addEventListener('keydown', game.playerControls, false)
+
       document.body.setAttribute('keypress-listener', 'true');
     } else {
+      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(event.code) > -1) {
+        event.preventDefault()
+      }
 
-      if (keyPressed) {
-        let key = keyPressed.key.toLowerCase();
+      if (event) {
+        let key = event.key.toLowerCase()
 
-        if (key === "w")
+        if (key === "w" || key === "arrowup")
           game.playerEmoticon.move('N')
-        if (key === "a")
+        if (key === "a" || key === "arrowleft")
           game.playerEmoticon.move('W')
-        if (key === "s")
+        if (key === "s" || key === "arrowdown")
           game.playerEmoticon.move('S')
-        if (key === "d")
+        if (key === "d" || key === "arrowright")
           game.playerEmoticon.move('E')
+
+        if (key === 'r') {
+          game.restartRumble()
+        }
       }
     }
   },
   removePlayerControls: function () {
-    document.body.removeEventListener('keypress', game.playerControls, false);
+    document.body.removeEventListener('keydown', game.playerControls, false);
     document.body.setAttribute('keypress-listener', 'false');
   },
   rumble: function () {
@@ -206,7 +214,7 @@ let game = {
     display.leaderboardRenderer.tick()
     game.startingSpawn()
   },
-  reset() {
+  reset: function () {
     display.renderer.stopTimer()
     display.leaderboardRenderer.stopTimer()
 
@@ -228,10 +236,17 @@ let game = {
     $('#create-char').text('')
     $('#game-buttons').text('')
     $('#leaderboard').text('')
+
+    game.removePlayerControls()
+  },
+  restartRumble: function () {
+    game.reset()
+    game.playerEmoticon = new Emoticon(game.lastCharStats.emoticon, game.lastCharStats.health, game.lastCharStats.attack, game.lastCharStats.defence)
+    game.playerEmoticon.player = true
+    game.rumble()
   },
   gameOver: function () {
     game.gameOverState = true
-    game.removePlayerControls()
   }
 }
 
@@ -387,9 +402,9 @@ let display = {
   },
   drawLeaderboard: function () {
     let leaderboard = game.leaderboard.sort((a, b) => {
-      if (a.level > b.level)
+      if (a.wins > b.wins)
         return -1
-      if (a.level < b.level)
+      if (a.wins < b.wins)
         return 1
       return 0
     })
@@ -400,7 +415,7 @@ let display = {
     let output = ''
     for (let i = 0; i < amountToShow; i++) {
       output += `<div style="display: inline-block;"><div style="display: inline-block; width:53px;">#${i + 1}${i === 0 ? '👑' : ''}: </div>
-      <div class="emoticon">${leaderboard[i].emoticon}</div> ⭐${leaderboard[i].level} 🏆:${leaderboard[i].wins} ❤️:${leaderboard[i].stats.health} ⚔️:${leaderboard[i].stats.attack} 🛡️:${leaderboard[i].stats.defence}  ${leaderboard[i].player ? '👈' : ''}</div><br>`
+      <div class="emoticon">${leaderboard[i].emoticon}</div> 🏆:${leaderboard[i].wins} ⭐${leaderboard[i].level} ❤️:${leaderboard[i].stats.health} ⚔️:${leaderboard[i].stats.attack} 🛡️:${leaderboard[i].stats.defence}  ${leaderboard[i].player ? '👈' : ''}</div><br>`
     }
 
     output += `<br><br>`
@@ -441,12 +456,7 @@ let display = {
   drawRestartButton: function () {
     $('#game-buttons').append(`<span id="restart-button" class="game-button"><span>🔄</span></span>`)
 
-    $('#restart-button').click(function () {
-      game.reset()
-      game.playerEmoticon = new Emoticon(game.lastCharStats.emoticon, game.lastCharStats.health, game.lastCharStats.attack, game.lastCharStats.defence)
-      game.playerEmoticon.player = true
-      game.rumble()
-    })
+    $('#restart-button').click(game.restartRumble)
   },
   drawCreateChar: function () {
     $('#create-char').append(
@@ -925,7 +935,7 @@ function createEmoticon() {
     facesLeft: ['(', '[', '{', 'ʕ', '≧', '>', '=', '༼', '|', '｡', '⋟', '꒰'],
     facesRight: [')', ']', '}', 'ʔ', '≦', '<', '=', '༽', '|', '｡', '⋞', '꒱'],
     eyes: ['^', ';', '╥', '*', '•', '●', '◔', '◑', '◉', '˘', '❛', '◠', '︺', '⊙', '♡', 'x', 'Q', 'ಠ', '°', '☆', 'Θ', 'ఠ', '¬'],
-    mouths: ['ᴥ', 'v', 'o', '_', '.', '-', '◡','⌓', '︹', '︿', 'ᆺ', '﹏', 'ᆽ', 'Д', 'w', '□', 'ω', ' ͜ʖ', '±', '◇', '～', '∇', '⍨', '₃', 'ε']
+    mouths: ['ᴥ', 'v', 'o', '_', '.', '-', '◡', '⌓', '︹', '︿', 'ᆺ', '﹏', 'ᆽ', 'Д', 'w', '□', 'ω', ' ͜ʖ', '±', '◇', '～', '∇', '⍨', '₃', 'ε']
   }
 
   let faceIndex = getRandomInt(parts.facesLeft.length)
