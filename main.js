@@ -48,11 +48,11 @@ let game = {
 
     game.board = Array(game.config.yTileCount).fill(null).map(() => new Array(game.config.xTileCount).fill(null))
   },
-  createAIMoveTimer: function (e1) {
+  createAIMoveTimer(e1) {
     let timer = {
       emoticon: e1,
       timer: null,
-      tick: function (thisTimer) {
+      tick(thisTimer) {
         if (thisTimer === undefined)
           thisTimer = this
 
@@ -66,14 +66,14 @@ let game = {
 
         thisTimer.timer = window.setTimeout(thisTimer.tick, moveSpeed, thisTimer);
       },
-      stopTimer: function () {
+      stopTimer() {
         clearTimeout(this.timer)
       }
     }
     timer.tick()
     game.aiMoveTimers.push(timer)
   },
-  removeAIMoveTimer: function (e1) {
+  removeAIMoveTimer(e1) {
     game.aiMoveTimers.forEach(t => {
       if (t.emoticon === e1) {
         t.stopTimer()
@@ -84,7 +84,7 @@ let game = {
       }
     })
   },
-  removeFightTimer: function (fightTimer) {
+  removeFightTimer(fightTimer) {
     game.fightTimers.forEach(t => {
       if (t.timer === fightTimer.timer) {
         t.stopTimer()
@@ -95,7 +95,7 @@ let game = {
       }
     })
   },
-  isEmpty: function (posX, posY) {
+  isEmpty(posX, posY) {
     if (posX < 0 || posX > game.config.xTileCount - 1 || posY < 0 || posY > game.config.yTileCount - 1)
       return null
 
@@ -104,7 +104,7 @@ let game = {
     else
       return false
   },
-  isEmoticon: function (posX, posY) {
+  isEmoticon(posX, posY) {
     if (posX < 0 || posX > game.config.xTileCount - 1 || posY < 0 || posY > game.config.yTileCount - 1)
       return null
 
@@ -115,7 +115,7 @@ let game = {
       return false
     }
   },
-  findEmoticon: function (e1) {
+  findEmoticon(e1) {
     for (let y = 0; y < game.board.length; y++) {
       let x = game.board[y].indexOf(e1)
       if (x > -1) {
@@ -124,7 +124,7 @@ let game = {
     }
     return null
   },
-  spawnEmoticon: function (level, e1) {
+  spawnEmoticon(level, e1) {
     let spawnLimit = Math.floor((game.config.xTileCount + game.config.yTileCount) / 2)
     if (level === undefined || level < 1) {
       level = 1
@@ -152,7 +152,7 @@ let game = {
 
     }
   },
-  startingSpawn: function (type) {
+  startingSpawn(type) {
     if (type === 'player')
       game.spawnEmoticon(1, game.playerEmoticon)
 
@@ -163,7 +163,7 @@ let game = {
       game.spawnEmoticon()
     }
   },
-  playerControls: function (event) {
+  playerControls(event) {
     if (document.body.getAttribute('keypress-listener') !== 'true') {
       document.body.addEventListener('keydown', game.playerControls, false)
 
@@ -191,11 +191,11 @@ let game = {
       }
     }
   },
-  removePlayerControls: function () {
+  removePlayerControls() {
     document.body.removeEventListener('keydown', game.playerControls, false);
     document.body.setAttribute('keypress-listener', 'false');
   },
-  rumble: function () {
+  rumble() {
     game.createBoard()
     display.renderer.tick()
     display.leaderboardRenderer.tick()
@@ -204,17 +204,17 @@ let game = {
     game.startingSpawn('player')
     game.playerControls()
   },
-  createChar: function () {
+  createChar() {
     display.drawCreateChar()
   },
-  aiRumble: function () {
+  aiRumble() {
     game.createBoard()
     display.drawAIRumbleButtons()
     display.renderer.tick()
     display.leaderboardRenderer.tick()
     game.startingSpawn()
   },
-  reset: function () {
+  reset() {
     display.renderer.stopTimer()
     display.leaderboardRenderer.stopTimer()
 
@@ -239,13 +239,13 @@ let game = {
 
     game.removePlayerControls()
   },
-  restartRumble: function () {
+  restartRumble() {
     game.reset()
     game.playerEmoticon = new Emoticon(game.lastCharStats.emoticon, game.lastCharStats.health, game.lastCharStats.attack, game.lastCharStats.defence)
     game.playerEmoticon.player = true
     game.rumble()
   },
-  gameOver: function () {
+  gameOver() {
     game.gameOverState = true
   }
 }
@@ -253,7 +253,7 @@ let game = {
 let display = {
   titleTimer: {
     timer: null,
-    tick: function () {
+    tick() {
       $('#title').empty()
       let titleTimerSpeed = 4000
       if (game.playerEmoticon !== null) {
@@ -265,7 +265,7 @@ let display = {
       }
       display.titleTimer.timer = window.setTimeout('display.titleTimer.tick()', titleTimerSpeed)
     },
-    stopTimer: function () {
+    stopTimer() {
       display.titleTimer.tickNumber = 0
       clearTimeout(display.titleTimer.timer)
     }
@@ -274,12 +274,12 @@ let display = {
   leaderboardRenderer: {
     tickNumber: 0,
     timer: null,
-    tick: function () {
+    tick() {
       display.drawLeaderboard()
       display.leaderboardRenderer.tickNumber++
       display.leaderboardRenderer.timer = window.setTimeout('display.leaderboardRenderer.tick()', 2000)
     },
-    stopTimer: function () {
+    stopTimer() {
       display.leaderboardRenderer.tickNumber = 0
       clearTimeout(display.leaderboardRenderer.timer)
     }
@@ -287,17 +287,17 @@ let display = {
   renderer: {
     tickNumber: 0,
     timer: null,
-    tick: function () {
+    tick() {
       display.drawGame()
       display.renderer.tickNumber++
       display.renderer.timer = window.setTimeout('display.renderer.tick()', game.config.renderSpeed)
     },
-    stopTimer: function () {
+    stopTimer() {
       display.renderer.tickNumber = 0
       clearTimeout(display.renderer.timer)
     }
   },
-  drawBoard: function (ctx) {
+  drawBoard(ctx) {
     for (let y = 0; y < game.config.yTileCount; y++) {
       for (let x = 0; x < game.config.xTileCount; x++) {
         if (y % 2 === 0) {
@@ -400,7 +400,7 @@ let display = {
       ctx.fillText(gameOverText, (ctx.canvas.clientWidth / 2) - (ctx.measureText(gameOverText).width / 2), (ctx.canvas.clientHeight / 2) + (ctx.canvas.clientHeight / 20))
     }
   },
-  drawLeaderboard: function () {
+  drawLeaderboard() {
     let leaderboard = game.leaderboard.sort((a, b) => {
       if (a.wins > b.wins)
         return -1
@@ -426,7 +426,7 @@ let display = {
 
     $('#leaderboard').append(output)
   },
-  drawAIRumbleButtons: function () {
+  drawAIRumbleButtons() {
     $('#game-buttons').append(
       `<span id="slower-button" class="game-button"><span>🐢</span></span> 
       <span id="faster-button" class="game-button"><span>🐇</span></span>`)
@@ -445,7 +445,7 @@ let display = {
 
     display.drawBackButton()
   },
-  drawBackButton: function () {
+  drawBackButton() {
     $('#game-buttons').append(`<span id="back-button" class="game-button"><span>🔙</span></span>`)
 
     $('#back-button').click(function () {
@@ -453,12 +453,12 @@ let display = {
       $('#nav').show()
     })
   },
-  drawRestartButton: function () {
+  drawRestartButton() {
     $('#game-buttons').append(`<span id="restart-button" class="game-button"><span>🔄</span></span>`)
 
     $('#restart-button').click(game.restartRumble)
   },
-  drawCreateChar: function () {
+  drawCreateChar() {
     $('#create-char').append(
       `<h3>Spend ${game.config.baseStatPoints} Points</h3>
       <label class="char-label" id="emoticon-input-label" for="emoticon-input">Emoticon:</label>
@@ -541,7 +541,7 @@ let display = {
       game.rumble()
     })
   },
-  drawGame: function () {
+  drawGame() {
     if (document.getElementById("canvas") === null) {
       $('#display').append(`<canvas id="canvas" width="${game.config.xTileCount * display.tileSize}" height="${game.config.yTileCount * display.tileSize}">`)
       $('body').css('min-width', game.config.xTileCount * display.tileSize)
