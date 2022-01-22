@@ -1,6 +1,9 @@
 
 window.onload = function () {
   display.titleTimer.tick()
+
+  game.aiSpeed = game.config.aiBaseSpeed
+  game.aiMoveSpeedModifier = game.config.aiBaseMoveSpeedModifier
 }
 
 $('#rumble-nav').click(function () {
@@ -17,34 +20,36 @@ let game = {
   config: {
     baseHealth: 20,
     healthMultiplier: 2,
-    blockChance: .04,
-    blockLimit: .90,
+    resistanceModifier: .04,
+    resistanceLimit: .90,
+    lifeStealModifier: .05,
     rollAmount: 6,
     baseStatPoints: 20,
     baseMaxHealthPoints: 10,
     baseMaxAttackPoints: 10,
     baseMaxDefencePoints: 10,
-    lifeStealModifier: .05,
-    renderSpeed: 33,
     playerFightSpeed: 300,
-    playerDamageMitigation: .3,
+    playerDamageMitigation: .1,
     spawnLevelSplit: 1.3,
-    aiBaseSpeed: 800,
+    aiBaseSpeed: 1000,
     aiMaxSpeed: 50,
-    aiMoveSpeedModifier: .1,
+    aiBaseMoveSpeedModifier: .04,
+    renderSpeed: 33,
     xTileCount: 8,
     yTileCount: 8,
   },
   playerEmoticon: null,
   lastCharStats: null,
   gameOverState: false,
+  aiSpeed: null,
+  aiMoveSpeedModifier: null,
   board: [],
   leaderboard: [],
   aiMoveTimers: [],
   fightTimers: [],
   createBoard: function () {
     game.config.xTileCount = Math.floor((window.innerWidth - 20) / display.tileSize)
-    game.config.yTileCount = Math.floor((window.innerHeight - 58) / display.tileSize)
+    game.config.yTileCount = Math.floor((window.innerHeight - 120) / display.tileSize)
 
     game.board = Array(game.config.yTileCount).fill(null).map(() => new Array(game.config.xTileCount).fill(null))
   },
@@ -59,10 +64,12 @@ let game = {
         if (!thisTimer.emoticon.inCombat)
           thisTimer.emoticon.moveToTarget()
 
-        let moveSpeedMultiplier = 1 - (thisTimer.emoticon.level * game.config.aiMoveSpeedModifier)
-        let moveSpeed = Math.floor((game.config.aiBaseSpeed * moveSpeedMultiplier) + getRandomInt(100))
+        let moveSpeedMultiplier = 1 - (thisTimer.emoticon.level * game.aiMoveSpeedModifier)
+        let moveSpeed = Math.floor((game.aiSpeed * moveSpeedMultiplier) + getRandomInt(100))
         if (moveSpeed < game.config.aiMaxSpeed)
           moveSpeed = game.config.aiMaxSpeed
+
+
 
         thisTimer.timer = window.setTimeout(thisTimer.tick, moveSpeed, thisTimer);
       },
@@ -208,6 +215,7 @@ let game = {
     display.drawCreateChar()
   },
   aiRumble() {
+    game.aiMoveSpeedModifier = .05
     game.createBoard()
     display.drawAIRumbleButtons()
     display.renderer.tick()
@@ -227,7 +235,9 @@ let game = {
     })
     game.fightTimers = []
 
-    game.config.aiBaseSpeed = 1000
+
+    game.aiSpeed = game.config.aiBaseSpeed
+    game.aiMoveSpeedModifier = game.config.aiBaseMoveSpeedModifier
     game.gameOverState = false
     game.playerEmoticon = null
     game.board = []
@@ -306,7 +316,7 @@ let display = {
           else
             ctx.fillStyle = "#fff4ff"
         } else {
-          if (x % 2 != 0)
+          if (x % 2 !== 0)
             ctx.fillStyle = "#c7ecff"
           else
             ctx.fillStyle = "#fff4ff"
@@ -338,7 +348,7 @@ let display = {
             }
           } else {
             if (e1.player) {
-              ctx.strokeStyle = "#ffff33"
+              ctx.strokeStyle = "#33cc33"
               ctx.strokeRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize)
             } else {
               if (e1.level >= game.playerEmoticon.level) {
@@ -350,12 +360,10 @@ let display = {
                 ctx.strokeStyle = `rgba(${55 * intensity}, ${155 * intensity}, ${255 * intensity})`
               }
               if (e1.level < game.playerEmoticon.level) {
-                for (let i = 0; i < 10; i++) {
-                  let intensity = 1 - ((game.playerEmoticon.level - e1.level) / 10)
-                  if (intensity < 0)
-                    intensity = 0
-                  ctx.strokeStyle = `rgba(55, 155, 255, ${intensity})`
-                }
+                let intensity = 1 - ((game.playerEmoticon.level - e1.level) / 10)
+                if (intensity < 0 || e1.level <= game.playerEmoticon.level - 10)
+                  intensity = 0
+                ctx.strokeStyle = `rgba(55, 155, 255, ${intensity})`
               }
               ctx.strokeRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize)
             }
@@ -373,7 +381,7 @@ let display = {
           ctx.fillText(level, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(level).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 1.25))
 
           //Attack Direction
-          if (e1.attackDirection != null) {
+          if (e1.attackDirection !== null) {
             ctx.font = "16px Verdana"
             if (e1.attackDirection === 'N')
               ctx.fillText('⚔️', x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText('⚔️').width / 2)), y * display.tileSize + Math.floor(display.tileSize / 10))
@@ -389,15 +397,13 @@ let display = {
     }
 
     if (game.gameOverState) {
-      let gameOverText = 'Game Over'
+      let gameOverText = '⚰️'
 
-      ctx.fillStyle = 'black'
-      ctx.font = 'bold ' + Math.floor(ctx.canvas.clientWidth / 9.5) + 'px Verdana'
-      ctx.fillText(gameOverText, (ctx.canvas.clientWidth / 2) - (ctx.measureText(gameOverText).width / 2), (ctx.canvas.clientHeight / 2) + (ctx.canvas.clientHeight / 20))
+      if (game.playerEmoticon.level % 2 === 0)
+        gameOverText = '☠️'
 
-      ctx.fillStyle = 'red'
-      ctx.font = 'bold ' + Math.floor(ctx.canvas.clientWidth / 10) + 'px Verdana'
-      ctx.fillText(gameOverText, (ctx.canvas.clientWidth / 2) - (ctx.measureText(gameOverText).width / 2), (ctx.canvas.clientHeight / 2) + (ctx.canvas.clientHeight / 20))
+      ctx.font = 'bold ' + Math.floor((ctx.canvas.clientWidth + ctx.canvas.clientHeight) / 10) + 'px Verdana'
+      ctx.fillText(gameOverText, (ctx.canvas.clientWidth / 2) - (ctx.measureText(gameOverText).width / 2), (ctx.canvas.clientHeight / 2) + (ctx.canvas.clientHeight / 10))
     }
   },
   drawLeaderboard() {
@@ -432,15 +438,15 @@ let display = {
       <span id="faster-button" class="game-button"><span>🐇</span></span>`)
 
     $('#slower-button').click(function () {
-      game.config.aiBaseSpeed += 100
-      if (game.config.aiBaseSpeed > 100 && game.config.aiBaseSpeed < 200)
-        game.config.aiBaseSpeed = 100
+      game.aiSpeed += 100
+      if (game.aiSpeed > 100 && game.aiSpeed < 200)
+        game.aiSpeed = 100
     })
     $('#faster-button').click(function () {
-      if (game.config.aiBaseSpeed < 200)
-        game.config.aiBaseSpeed = game.config.aiMaxSpeed
+      if (game.aiSpeed < 200)
+        game.aiSpeed = game.config.aiMaxSpeed
       else
-        game.config.aiBaseSpeed -= 100
+        game.aiSpeed -= 100
     })
 
     display.drawBackButton()
@@ -561,7 +567,7 @@ class Emoticon {
     else
       this.emoticon = emoticon
 
-    if (health != undefined && attack != undefined && defence != undefined) {
+    if (health !== undefined && attack !== undefined && defence !== undefined) {
       health = (health * game.config.healthMultiplier) + game.config.baseHealth
       this.stats = { health, currentHealth: health, attack, defence }
       this.custom = true
@@ -578,8 +584,11 @@ class Emoticon {
   }
 
   levelUp(e2) {
-    let points = 1
-    if (e2 != undefined) {
+    let points = 0
+
+    if (e2 !== undefined) {
+      points++
+
       if (e2.level >= this.level) {
         points++
         points += Math.floor((e2.level - this.level) / 2)
@@ -596,6 +605,13 @@ class Emoticon {
         this.stats.defence++
 
       this.level++
+    }
+
+    //ai speed in rumble
+    if (this.player) {
+      game.aiSpeed = game.config.aiBaseSpeed - (this.level * 50)
+      if (game.aiSpeed < 300)
+        game.aiSpeed = 300
     }
   }
 
@@ -626,7 +642,7 @@ class Emoticon {
   remove() {
     game.removeAIMoveTimer(this)
     let pos = this.getPosition()
-    if (pos != null)
+    if (pos !== null)
       game.board[pos[1]][pos[0]] = null
   }
 
@@ -636,8 +652,8 @@ class Emoticon {
       for (let x = 0; x < game.config.xTileCount; x++) {
         if (game.isEmoticon(x, y)) {
           let pos = this.getPosition()
-          if (pos != null) {
-            if (x != pos[0] && y != pos[1]) {
+          if (pos !== null) {
+            if (x !== pos[0] && y !== pos[1]) {
               if (game.board[y][x].level >= this.level)
                 if (!game.board[y][x].inCombat)
                   potentialTargets.push(game.board[y][x])
@@ -659,8 +675,8 @@ class Emoticon {
       this.findTarget()
 
     let pos = this.getPosition()
-    if (pos != null) {
-      if (this.target != null) {
+    if (pos !== null) {
+      if (this.target !== null) {
         let targetPos = this.target.getPosition()
         let moveX = pos[0]
         let moveY = pos[1]
@@ -778,6 +794,7 @@ class Emoticon {
 function fight(e1, e2) {
   e1.inCombat = true
   e2.inCombat = true
+
   let currentFight = function (e1, e2, fightTimer) {
     game.removeFightTimer(fightTimer)
 
@@ -786,68 +803,16 @@ function fight(e1, e2) {
       attack(e2, e1)
 
       let status = checkStatus(e1, e2)
-      if (status === 'draw') {
-        if (e1.player || e2.player)
-          game.gameOver()
 
-        if (e1.level > 2 || e2.level > 2)
-          game.spawnEmoticon()
-        game.spawnEmoticon(Math.floor(e1.level / game.config.spawnLevelSplit))
-        game.spawnEmoticon(Math.floor(e2.level / game.config.spawnLevelSplit))
-
-        if (e1.level > 1)
-          game.leaderboard.push(e1)
-        if (e2.level > 1)
-          game.leaderboard.push(e2)
-
-        e1.remove()
-        e2.remove()
-        break
-      }
-      if (status === 'win') {
-        if (e2.player)
-          game.gameOver()
-
-        e1.wins++
-        e1.levelUp(e2)
-        e1.lifeSteal(e2)
-
-        if (e2.level > 2)
-          game.spawnEmoticon(Math.floor(e2.level / game.config.spawnLevelSplit))
-        game.spawnEmoticon(Math.floor(e2.level / game.config.spawnLevelSplit))
-
-        if (e2.level > 1)
-          game.leaderboard.push(e2)
-        e2.remove()
-
-        e1.attackDirection = null
-        e1.target = null
-        e1.inCombat = false
-        break
-      }
-      if (status === 'lose') {
-        if (e1.player)
-          game.gameOver()
-
-        e2.wins++
-        e2.levelUp(e1)
-        e2.lifeSteal(e1)
-
-        if (e1.level > 2)
-          game.spawnEmoticon(Math.floor(e1.level / game.config.spawnLevelSplit))
-        game.spawnEmoticon(Math.floor(e1.level / game.config.spawnLevelSplit))
-
-        if (e1.level > 1)
-          game.leaderboard.push(e1)
-        e1.remove()
-
-        e2.target = null
-        e2.inCombat = false
+      if (status) {
+        fightOutcome(e1, e2, status)
         break
       }
     }
   }
-  let fightSpeed = game.config.aiBaseSpeed
+
+  let fightSpeed = game.aiSpeed
+
   if (e1.player || e2.player)
     fightSpeed = game.config.playerFightSpeed
 
@@ -863,26 +828,21 @@ function fight(e1, e2) {
 
 function attack(e1, e2) {
   let roll = 1 + getRandomInt(game.config.rollAmount)
-  let hitChance = Math.random()
-  let blockChance = Math.floor((game.config.blockChance * e2.stats.defence) * 100) / 100
-  if (blockChance > game.config.blockLimit)
-    blockChance = game.config.blockLimit
-  if (hitChance > blockChance) {
-    let hit = e1.stats.attack + roll
-    if (e2.player)
-      hit = Math.floor(hit * (1 - game.config.playerDamageMitigation))
-    e2.stats.currentHealth = e2.stats.currentHealth - hit
-    return {
-      result: 'hit',
-      roll,
-      hit
-    }
+
+  let resistance = Math.floor((game.config.resistanceModifier * e2.stats.defence) * 100) / 100
+  if (resistance > game.config.resistanceLimit)
+    resistance = game.config.resistanceLimit
+
+  let hit = Math.floor((e1.stats.attack + roll) * (1 - resistance))
+
+  if (e2.player) {
+    hit = Math.floor(hit * (1 - game.config.playerDamageMitigation))
+    if (hit === 0)
+      hit++
   }
-  return {
-    result: 'block',
-    blockChance: Math.round(blockChance * 100) / 100,
-    hitChance: Math.round(hitChance * 100) / 100
-  }
+
+  e2.stats.currentHealth = e2.stats.currentHealth - hit
+  return { roll, hit }
 }
 
 function checkStatus(e1, e2) {
@@ -898,6 +858,55 @@ function checkStatus(e1, e2) {
   if (e1.stats.currentHealth < 1) {
     e1.stats.currentHealth = 0
     return 'lose'
+  }
+  return null
+}
+
+function fightOutcome(e1, e2, status) {
+  if (status === 'draw') {
+    if (getRandomInt(2))
+      status = 'win'
+    else
+      status = 'lose'
+  }
+  if (status === 'win') {
+    if (e2.player)
+      game.gameOver()
+
+    e1.wins++
+    e1.levelUp(e2)
+    e1.lifeSteal(e2)
+
+    if (e2.level > 1)
+      game.spawnEmoticon(Math.ceil(e2.level / game.config.spawnLevelSplit))
+    game.spawnEmoticon(Math.ceil(e2.level / game.config.spawnLevelSplit))
+
+    if (e2.level > 1)
+      game.leaderboard.push(e2)
+    e2.remove()
+
+    e1.attackDirection = null
+    e1.target = null
+    e1.inCombat = false
+  }
+  if (status === 'lose') {
+    if (e1.player)
+      game.gameOver()
+
+    e2.wins++
+    e2.levelUp(e1)
+    e2.lifeSteal(e1)
+
+    if (e1.level > 1)
+      game.spawnEmoticon(Math.ceil(e1.level / game.config.spawnLevelSplit))
+    game.spawnEmoticon(Math.ceil(e1.level / game.config.spawnLevelSplit))
+
+    if (e1.level > 1)
+      game.leaderboard.push(e1)
+    e1.remove()
+
+    e2.target = null
+    e2.inCombat = false
   }
 }
 
