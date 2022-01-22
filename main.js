@@ -28,7 +28,7 @@ let game = {
     baseMaxHealthPoints: 10,
     baseMaxAttackPoints: 10,
     baseMaxDefencePoints: 10,
-    playerFightSpeed: 300,
+    playerFightSpeed: 700,
     playerDamageMitigation: .1,
     spawnLevelSplit: 1.3,
     aiBaseSpeed: 1000,
@@ -376,10 +376,9 @@ let display = {
           ctx.font = "16px Verdana"
           ctx.fillText(e1.emoticon, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(e1.emoticon).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 1.8))
           //Level
-          ctx.font = "12px Verdana"
+          ctx.font = "14px Verdana"
           let level = `⭐${e1.level}`
           ctx.fillText(level, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(level).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 1.25))
-
           //Attack Direction
           if (e1.attackDirection !== null) {
             ctx.font = "16px Verdana"
@@ -391,6 +390,37 @@ let display = {
               ctx.fillText('⚔️', x * display.tileSize + (display.tileSize - (ctx.measureText('⚔️').width / 2)), y * display.tileSize + Math.floor(display.tileSize / 1.8))
             if (e1.attackDirection === 'W')
               ctx.fillText('⚔️', x * display.tileSize + (0 - (ctx.measureText('⚔️').width / 2)), y * display.tileSize + Math.floor(display.tileSize / 1.8))
+          }
+          //Combat Display
+          if (e1.combatDisplay !== null) {
+            ctx.font = "16px Verdana"
+            ctx.fillStyle = "red"
+            ctx.strokeStyle = "#c7ecff";
+            ctx.lineWidth = 5;
+            if (e1.attackDirection !== null || e1.attackerDirection !== null) {
+              let text = `-${e1.combatDisplay}🎯`
+              if (e1.attackDirection === 'N' || e1.attackerDirection === 'N') {
+                ctx.strokeText(text, x * display.tileSize + (display.tileSize - (ctx.measureText(text).width / 2)) + 25, y * display.tileSize + Math.floor(display.tileSize / 1.7))
+                ctx.fillText(text, x * display.tileSize + (display.tileSize - (ctx.measureText(text).width / 2)) + 25, y * display.tileSize + Math.floor(display.tileSize / 1.7))
+              }
+              if (e1.attackDirection === 'S' || e1.attackerDirection === 'S') {
+                ctx.strokeText(text, x * display.tileSize + (0 - (ctx.measureText(text).width / 2)) - 25, y * display.tileSize + Math.floor(display.tileSize / 1.7))
+                ctx.fillText(text, x * display.tileSize + (0 - (ctx.measureText(text).width / 2)) - 25, y * display.tileSize + Math.floor(display.tileSize / 1.7))
+              }
+              if (e1.attackDirection === 'E' || e1.attackerDirection === 'E') {
+                ctx.strokeText(text, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.tileSize + Math.floor(display.tileSize / 10) + 15)
+                ctx.fillText(text, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.tileSize + Math.floor(display.tileSize / 10) + 15)
+              }
+              if (e1.attackDirection === 'W' || e1.attackerDirection === 'W') {
+                ctx.strokeText(text, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 10) - 15)
+                ctx.fillText(text, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 10) - 15)
+              }
+            } else {
+              ctx.fillStyle = "green"
+              let text = `+${e1.combatDisplay}❤️`
+              ctx.strokeText(text, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 10) - 15)
+              ctx.fillText(text, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 10) - 15)
+            }
           }
         }
       }
@@ -593,6 +623,7 @@ class Emoticon {
     this.inCombat = false
     this.attackDirection = null
     this.attackerDirection = null
+    this.combatDisplay = null
     this.player = false
   }
 
@@ -629,16 +660,38 @@ class Emoticon {
   }
 
   lifeSteal(e2) {
+    let heal = 0
     if (this.level > e2.level) {
       let lifeSteal = 1 - ((this.level - e2.level) * game.config.lifeStealModifier)
       if (lifeSteal < 0)
         lifeSteal = 0
 
-      this.stats.currentHealth += Math.floor(e2.stats.health * lifeSteal)
-      if (this.stats.currentHealth > this.stats.health)
-        this.stats.currentHealth = this.stats.health
+      heal = Math.floor(e2.stats.health * lifeSteal)
+      if (this.stats.currentHealth + heal > this.stats.health)
+        heal = this.stats.health - this.stats.currentHealth
+
+      this.stats.currentHealth += heal
     } else {
-      this.stats.currentHealth = this.stats.health
+      heal = this.stats.health - this.stats.currentHealth
+
+      this.stats.currentHealth += heal
+    }
+
+    if (this.player) {
+      this.combatDisplay = heal
+
+      let clearCombatDisplayTimer = {
+        timer: null,
+        stopTimer: function () {
+          clearTimeout(this.timer)
+        }
+      }
+
+      clearCombatDisplayTimer.timer = window.setTimeout(function (timer, player) {
+        game.removeFightTimer(timer)
+        player.combatDisplay = null
+      }, game.config.playerFightSpeed * 1.3, clearCombatDisplayTimer, this)
+      game.fightTimers.push(clearCombatDisplayTimer)
     }
   }
 
@@ -827,44 +880,92 @@ function fight(e1, e2) {
       let status = checkStatus(e1, e2)
 
       if (status) {
+        let fightOutcomeTimer = {
+          timer: null,
+          stopTimer: function () {
+            clearTimeout(this.timer)
+          }
+        }
+
+        fightOutcomeTimer.timer = window.setTimeout(function (timer) {
+          game.removeFightTimer(timer)
+          e1.attackDirection = null
+          e2.attackerDirection = null
+          fightOutcome(e1, e2, status)
+        }, game.config.playerFightSpeed, fightOutcomeTimer)
+        game.fightTimers.push(fightOutcomeTimer)
+
+        break
+      }
+    }
+  }
+
+  let playerFight = function (e1, e2, thisFight, fightTimer) {
+    if (fightTimer)
+      game.removeFightTimer(fightTimer)
+
+    e2.combatDisplay = attack(e1, e2)
+    e1.combatDisplay = attack(e2, e1)
+
+    let status = checkStatus(e1, e2)
+
+    if (status) {
+      let fightOutcomeTimer = {
+        timer: null,
+        stopTimer: function () {
+          clearTimeout(this.timer)
+        }
+      }
+
+      fightOutcomeTimer.timer = window.setTimeout(function (timer) {
+        game.removeFightTimer(timer)
         e1.attackDirection = null
         e2.attackerDirection = null
+        e1.combatDisplay = null
+        e2.combatDisplay = null
         fightOutcome(e1, e2, status)
-        break
+      }, game.config.playerFightSpeed, fightOutcomeTimer)
+      game.fightTimers.push(fightOutcomeTimer)
+    } else {
+      let fightTimer = {
+        timer: null,
+        stopTimer: function () {
+          clearTimeout(this.timer)
+        }
+      }
+
+      fightTimer.timer = window.setTimeout(thisFight, game.config.playerFightSpeed, e1, e2, thisFight, fightTimer)
+      game.fightTimers.push(fightTimer)
+
+      let clearCombatDisplayTimer = {
+        timer: null,
+        stopTimer: function () {
+          clearTimeout(this.timer)
+        }
+      }
+
+      clearCombatDisplayTimer.timer = window.setTimeout(function (timer) {
+        game.removeFightTimer(timer)
+        e2.combatDisplay = null
+        e1.combatDisplay = null
+      }, game.config.playerFightSpeed * .9, clearCombatDisplayTimer)
+      game.fightTimers.push(clearCombatDisplayTimer)
+    }
+  }
+
+
+  if (e1.player || e2.player) {
+    playerFight(e1, e2, playerFight)
+  } else {
+    let fightTimer = {
+      timer: null,
+      stopTimer: function () {
+        clearTimeout(this.timer)
       }
     }
+    fightTimer.timer = window.setTimeout(aiFight, game.aiSpeed, e1, e2, fightTimer)
+    game.fightTimers.push(fightTimer)
   }
-
-  let playerFight = function (e1, e2) {
-    game.removeFightTimer(fightTimer)
-
-    while (true) {
-      attack(e1, e2)
-      attack(e2, e1)
-
-      let status = checkStatus(e1, e2)
-
-      if (status) {
-        fightOutcome(e1, e2, status)
-        break
-      }
-    }
-  }
-
-  let fightSpeed = game.aiSpeed
-
-  if (e1.player || e2.player) //{
-    fightSpeed = game.config.playerFightSpeed
-  //} else {
-  let fightTimer = {
-    timer: null,
-    stopTimer: function () {
-      clearTimeout(this.timer)
-    }
-  }
-  fightTimer.timer = window.setTimeout(aiFight, fightSpeed, e1, e2, fightTimer)
-  game.fightTimers.push(fightTimer)
-  //}
 }
 
 function attack(e1, e2) {
@@ -883,7 +984,7 @@ function attack(e1, e2) {
   }
 
   e2.stats.currentHealth = e2.stats.currentHealth - hit
-  return { roll, hit }
+  return hit
 }
 
 function checkStatus(e1, e2) {
@@ -926,7 +1027,6 @@ function fightOutcome(e1, e2, status) {
       game.leaderboard.push(e2)
     e2.remove()
 
-    e1.attackDirection = null
     e1.target = null
     e1.inCombat = false
   }
