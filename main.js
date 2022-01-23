@@ -2,6 +2,9 @@
 window.onload = function () {
   display.titleTimer.tick()
 
+  game.createPlayerLeaderboard()
+  display.leaderboardRenderer.tick()
+
   game.aiSpeed = game.config.aiBaseSpeed
   game.aiMoveSpeedModifier = game.config.aiBaseMoveSpeedModifier
 }
@@ -202,6 +205,70 @@ let game = {
     document.body.removeEventListener('keydown', game.playerControls, false);
     document.body.setAttribute('keypress-listener', 'false');
   },
+  createPlayerLeaderboard() {
+    let leaderboardCookie = getCookie('playerLeaderboard').split(',')
+    if (leaderboardCookie[0] === '')
+      leaderboardCookie = []
+
+    for (let i = 0; i < leaderboardCookie.length / 5; i++) {
+      let index = i * 5
+      let emoticon = leaderboardCookie[index]
+      let health = leaderboardCookie[index + 1]
+      let attack = leaderboardCookie[index + 2]
+      let defence = leaderboardCookie[index + 3]
+      let wins = leaderboardCookie[index + 4]
+      let e1 = new Emoticon(emoticon, +health, +attack, +defence)
+      e1.wins = +wins
+      game.leaderboard.push(e1)
+    }
+  },
+  addToPlayerLeaderboard(e1) {
+    let leaderboardCookie = getCookie('playerLeaderboard').split(',')
+    if (leaderboardCookie[0] === '')
+      leaderboardCookie = []
+
+    let newPlayerLeaderboard = []
+    let e1Template = {
+      emoticon: e1.emoticon,
+      health: healthToPoints(e1.stats.health),
+      attack: e1.stats.attack,
+      defence: e1.stats.defence,
+      wins: e1.wins,
+      level: e1.level
+    }
+    newPlayerLeaderboard.push(e1Template)
+
+    for (let i = 0; i < leaderboardCookie.length / 5; i++) {
+      let index = i * 5
+      let emoticon = leaderboardCookie[index]
+      let health = leaderboardCookie[index + 1]
+      let attack = leaderboardCookie[index + 2]
+      let defence = leaderboardCookie[index + 3]
+      let wins = leaderboardCookie[index + 4]
+      e1Template = { emoticon, health, attack, defence, wins }
+      newPlayerLeaderboard.push(e1Template)
+    }
+
+    newPlayerLeaderboard = newPlayerLeaderboard.sort((a, b) => {
+      if (a.wins > b.wins)
+        return -1
+      if (a.wins < b.wins)
+        return 1
+      return 0
+    })
+
+    if (newPlayerLeaderboard.length > 100) {
+      newPlayerLeaderboard.splice(100, newPlayerLeaderboard.length - 100)
+    }
+
+    let newCookie = ""
+    for (let i = 0; i < newPlayerLeaderboard.length; i++) {
+      newCookie += newPlayerLeaderboard[i].emoticon + ',' + newPlayerLeaderboard[i].health + ',' + newPlayerLeaderboard[i].attack + ',' + newPlayerLeaderboard[i].defence + ',' + newPlayerLeaderboard[i].wins
+      if (i < newPlayerLeaderboard.length - 1)
+        newCookie += ','
+    }
+    setCookie('playerLeaderboard', newCookie, 30)
+  },
   rumble() {
     game.createBoard()
     display.renderer.tick()
@@ -212,9 +279,11 @@ let game = {
     game.playerControls()
   },
   createChar() {
+    game.reset()
     display.drawCreateChar()
   },
   aiRumble() {
+    game.reset()
     game.aiMoveSpeedModifier = .05
     game.createBoard()
     display.drawAIRumbleButtons()
@@ -257,6 +326,7 @@ let game = {
   },
   gameOver() {
     game.gameOverState = true
+    game.addToPlayerLeaderboard(game.playerEmoticon)
   }
 }
 
@@ -437,6 +507,12 @@ let display = {
     }
   },
   drawLeaderboard() {
+    //$('#leaderboard').css('width', $('#display').css('width'))
+    if (document.getElementById("canvas") !== null)
+      $('#leaderboard').css('min-width', $('#canvas').css('width'))
+    else
+      $('#leaderboard').css('width', 'initial')
+
     let leaderboard = game.leaderboard.sort((a, b) => {
       if (a.wins > b.wins)
         return -1
@@ -452,17 +528,17 @@ let display = {
     $('#leaderboard').text('')
 
     let amountToShow = leaderboard.length < 10 ? leaderboard.length : 10
-    let output = ''
+    let output = '<div>'
     for (let i = 0; i < amountToShow; i++) {
       output += `<div style="display: inline-block;"><div style="display: inline-block; width:53px;">#${i + 1}${i === 0 ? '👑' : ''}: </div>
       <div class="emoticon">${leaderboard[i].emoticon}</div> 🏆:${leaderboard[i].wins} ⭐:${leaderboard[i].level} ❤️:${leaderboard[i].stats.health} ⚔️:${leaderboard[i].stats.attack} 🛡️:${leaderboard[i].stats.defence}  ${leaderboard[i].player ? '👈' : ''}</div><br>`
     }
 
-    output += `<br><br>`
+    output += `</div><br><br><div>`
     for (let i = 0; i < leaderboard.length; i++) {
       output += `<div class="emoticon">${leaderboard[i].emoticon}</div>&nbsp;&nbsp;&nbsp;`
     }
-
+    output += `</div>`
     $('#leaderboard').append(output)
   },
   drawAIRumbleButtons() {
@@ -489,6 +565,8 @@ let display = {
 
     $('#back-button').click(function () {
       game.reset()
+      game.createPlayerLeaderboard()
+      display.leaderboardRenderer.tick()
       $('#nav').show()
     })
   },
@@ -593,7 +671,6 @@ let display = {
     if (document.getElementById("canvas") === null) {
       $('#display').append(`<canvas id="canvas" width="${game.config.xTileCount * display.tileSize}" height="${game.config.yTileCount * display.tileSize}">`)
       $('body').css('min-width', game.config.xTileCount * display.tileSize)
-      $('#leaderboard').css('min-width', $('body').css('min-width'))
     }
 
     let canvas = document.getElementById("canvas")
@@ -612,7 +689,6 @@ class Emoticon {
     if (health !== undefined && attack !== undefined && defence !== undefined) {
       health = (health * game.config.healthMultiplier) + game.config.baseHealth
       this.stats = { health, currentHealth: health, attack, defence }
-      this.custom = true
     }
     else
       this.stats = createStats()
@@ -1097,6 +1173,10 @@ function createEmoticon() {
 
 function getRandomInt(max) {
   return Math.floor(Math.random() * max)
+}
+
+function healthToPoints(health) {
+  return (health - game.config.baseHealth) / game.config.healthMultiplier
 }
 
 function setCookie(cname, cvalue, exdays) {
