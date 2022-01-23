@@ -68,14 +68,14 @@ let game = {
     tickNumber: 0,
     timer: null,
     tick() {
-      game.playerControls()
       display.drawGame()
       game.gameLoop.tickNumber++
       game.gameLoop.timer = window.setTimeout('game.gameLoop.tick()', game.config.gameSpeed)
+      game.playerControls()
     },
     stopTimer() {
-      game.gameLoop.tickNumber = 0
       clearTimeout(game.gameLoop.timer)
+      game.gameLoop.tickNumber = 0
     }
   },
 
@@ -336,6 +336,7 @@ let game = {
   reset() {
     game.gameLoop.stopTimer()
     display.leaderboardRenderer.stopTimer()
+
 
     game.aiMoveTimers.forEach(t => {
       t.stopTimer()
