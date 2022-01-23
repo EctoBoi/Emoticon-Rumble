@@ -80,8 +80,8 @@ let game = {
   },
 
   createBoard: function () {
-    game.config.xTileCount = Math.floor((window.innerWidth - 20) / display.tileSize)
-    game.config.yTileCount = Math.floor((window.innerHeight - 120) / display.tileSize)
+    game.config.xTileCount = Math.floor((window.innerWidth - 20 - display.offsetX * 2) / display.tileSize)
+    game.config.yTileCount = Math.floor((window.innerHeight - 120 - display.offsetY * 2) / display.tileSize)
 
     game.board = Array(game.config.yTileCount).fill(null).map(() => new Array(game.config.xTileCount).fill(null))
   },
@@ -400,6 +400,8 @@ let display = {
   },
 
   tileSize: 80,
+  offsetX: 50,
+  offsetY: 30,
 
   leaderboardRenderer: {
     tickNumber: 0,
@@ -416,6 +418,8 @@ let display = {
   },
 
   drawBoard(ctx) {
+    ctx.fillStyle = "#fff4ff"
+    ctx.fillRect(0, 0, (game.config.xTileCount * display.tileSize) + (display.offsetX * 2), (game.config.yTileCount * display.tileSize) + (display.offsetY * 2))
     for (let y = 0; y < game.config.yTileCount; y++) {
       for (let x = 0; x < game.config.xTileCount; x++) {
         if (y % 2 === 0) {
@@ -429,12 +433,12 @@ let display = {
           else
             ctx.fillStyle = "#fff4ff"
         }
-        ctx.fillRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize)
+        ctx.fillRect(x * display.tileSize + display.offsetX, y * display.tileSize + display.offsetY, display.tileSize, display.tileSize)
       }
     }
     ctx.lineWidth = 8
     ctx.strokeStyle = "#c7ecff"
-    ctx.strokeRect(0, 0, game.config.xTileCount * display.tileSize, game.config.yTileCount * display.tileSize)
+    ctx.strokeRect(display.offsetX, display.offsetY, game.config.xTileCount * display.tileSize, game.config.yTileCount * display.tileSize)
 
     for (let y = 0; y < game.config.yTileCount; y++) {
       for (let x = 0; x < game.config.xTileCount; x++) {
@@ -452,12 +456,12 @@ let display = {
                 ctx.strokeStyle = "#ff66ff"
               if (e1.level > 19)
                 ctx.strokeStyle = "#ff3333"
-              ctx.strokeRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize)
+              ctx.strokeRect(x * display.tileSize + display.offsetX, y * display.tileSize + display.offsetY, display.tileSize, display.tileSize)
             }
           } else {
             if (e1.player) {
               ctx.strokeStyle = "#33cc33"
-              ctx.strokeRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize)
+              ctx.strokeRect(x * display.tileSize + display.offsetX, y * display.tileSize + display.offsetY, display.tileSize, display.tileSize)
             } else {
               if (e1.level >= game.playerEmoticon.level) {
                 let difference = e1.level - game.playerEmoticon.level
@@ -473,31 +477,31 @@ let display = {
                   intensity = 0
                 ctx.strokeStyle = `rgba(55, 155, 255, ${intensity})`
               }
-              ctx.strokeRect(x * display.tileSize, y * display.tileSize, display.tileSize, display.tileSize)
+              ctx.strokeRect(x * display.tileSize + display.offsetX, y * display.tileSize + display.offsetY, display.tileSize, display.tileSize)
             }
           }
           //Stats
           ctx.font = "11px Verdana"
           let stats = `❤️${e1.stats.currentHealth}⚔️${e1.stats.attack}🛡️${e1.stats.defence}`
-          ctx.fillText(stats, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(stats).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 3.3))
+          ctx.fillText(stats, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(stats).width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 3.3))
           //Emoticon
           ctx.font = "16px Verdana"
-          ctx.fillText(e1.emoticon, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(e1.emoticon).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 1.8))
+          ctx.fillText(e1.emoticon, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(e1.emoticon).width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 1.8))
           //Level
           ctx.font = "14px Verdana"
           let level = `⭐${e1.level}`
-          ctx.fillText(level, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(level).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 1.25))
+          ctx.fillText(level, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(level).width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 1.25))
           //Attack Direction
           if (e1.attackDirection !== null) {
             ctx.font = "16px Verdana"
             if (e1.attackDirection === 'N')
-              ctx.fillText('⚔️', x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText('⚔️').width / 2)), y * display.tileSize + Math.floor(display.tileSize / 10))
+              ctx.fillText('⚔️', x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText('⚔️').width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 10))
             if (e1.attackDirection === 'S')
-              ctx.fillText('⚔️', x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText('⚔️').width / 2)), y * display.tileSize + display.tileSize + Math.floor(display.tileSize / 10))
+              ctx.fillText('⚔️', x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText('⚔️').width / 2)), y * display.tileSize + display.offsetY + display.tileSize + Math.floor(display.tileSize / 10))
             if (e1.attackDirection === 'E')
-              ctx.fillText('⚔️', x * display.tileSize + (display.tileSize - (ctx.measureText('⚔️').width / 2)), y * display.tileSize + Math.floor(display.tileSize / 1.8))
+              ctx.fillText('⚔️', x * display.tileSize + display.offsetX + (display.tileSize - (ctx.measureText('⚔️').width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 1.8))
             if (e1.attackDirection === 'W')
-              ctx.fillText('⚔️', x * display.tileSize + (0 - (ctx.measureText('⚔️').width / 2)), y * display.tileSize + Math.floor(display.tileSize / 1.8))
+              ctx.fillText('⚔️', x * display.tileSize + display.offsetX + (0 - (ctx.measureText('⚔️').width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 1.8))
           }
           //Combat Display
           if (e1.combatDisplay !== null) {
@@ -508,26 +512,26 @@ let display = {
             if (e1.attackDirection !== null || e1.attackerDirection !== null) {
               let text = e1.combatDisplay
               if (e1.attackDirection === 'N' || e1.attackerDirection === 'N') {
-                ctx.strokeText(text, x * display.tileSize + (display.tileSize - (ctx.measureText(text).width / 2)) + 25, y * display.tileSize + Math.floor(display.tileSize / 1.7))
-                ctx.fillText(text, x * display.tileSize + (display.tileSize - (ctx.measureText(text).width / 2)) + 25, y * display.tileSize + Math.floor(display.tileSize / 1.7))
+                ctx.strokeText(text, x * display.tileSize + display.offsetX + (display.tileSize - (ctx.measureText(text).width / 2)) + 25, y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 1.7))
+                ctx.fillText(text, x * display.tileSize + display.offsetX + (display.tileSize - (ctx.measureText(text).width / 2)) + 25, y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 1.7))
               }
               if (e1.attackDirection === 'S' || e1.attackerDirection === 'S') {
-                ctx.strokeText(text, x * display.tileSize + (0 - (ctx.measureText(text).width / 2)) - 25, y * display.tileSize + Math.floor(display.tileSize / 1.7))
-                ctx.fillText(text, x * display.tileSize + (0 - (ctx.measureText(text).width / 2)) - 25, y * display.tileSize + Math.floor(display.tileSize / 1.7))
+                ctx.strokeText(text, x * display.tileSize + display.offsetX + (0 - (ctx.measureText(text).width / 2)) - 25, y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 1.7))
+                ctx.fillText(text, x * display.tileSize + display.offsetX + (0 - (ctx.measureText(text).width / 2)) - 25, y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 1.7))
               }
               if (e1.attackDirection === 'E' || e1.attackerDirection === 'E') {
-                ctx.strokeText(text, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.tileSize + Math.floor(display.tileSize / 10) + 15)
-                ctx.fillText(text, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.tileSize + Math.floor(display.tileSize / 10) + 15)
+                ctx.strokeText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + display.tileSize + Math.floor(display.tileSize / 10) + 15)
+                ctx.fillText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + display.tileSize + Math.floor(display.tileSize / 10) + 15)
               }
               if (e1.attackDirection === 'W' || e1.attackerDirection === 'W') {
-                ctx.strokeText(text, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 10) - 15)
-                ctx.fillText(text, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 10) - 15)
+                ctx.strokeText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 10) - 15)
+                ctx.fillText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 10) - 15)
               }
             } else {
               ctx.fillStyle = "green"
               let text = e1.combatDisplay
-              ctx.strokeText(text, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 10) - 15)
-              ctx.fillText(text, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 10) - 15)
+              ctx.strokeText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 10) - 15)
+              ctx.fillText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 10) - 15)
             }
           }
         }
@@ -712,8 +716,8 @@ let display = {
 
   drawGame() {
     if (document.getElementById("canvas") === null) {
-      $('#display').append(`<canvas id="canvas" width="${game.config.xTileCount * display.tileSize}" height="${game.config.yTileCount * display.tileSize}">`)
-      $('body').css('min-width', game.config.xTileCount * display.tileSize)
+      $('#display').append(`<canvas id="canvas" width="${(game.config.xTileCount * display.tileSize) + (display.offsetX * 2)}" height="${(game.config.yTileCount * display.tileSize) + (display.offsetY * 2)}">`)
+      $('body').css('min-width', (game.config.xTileCount * display.tileSize) + (display.offsetX * 2))
     }
 
     let canvas = document.getElementById("canvas")

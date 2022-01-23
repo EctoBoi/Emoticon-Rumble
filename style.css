@@ -74,8 +74,6 @@ body{
 #game-buttons{
   display: inline-flex;
   align-items: center;
-  margin: 15px;
-  margin-bottom: 0px;
 }
 .game-button{
   display: inline-flex;
