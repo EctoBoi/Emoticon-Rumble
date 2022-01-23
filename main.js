@@ -41,6 +41,7 @@ let game = {
     xTileCount: 8,
     yTileCount: 8,
   },
+
   playerEmoticon: null,
   lastCharStats: null,
   gameOverState: false,
@@ -50,12 +51,14 @@ let game = {
   leaderboard: [],
   aiMoveTimers: [],
   fightTimers: [],
+
   createBoard: function () {
     game.config.xTileCount = Math.floor((window.innerWidth - 20) / display.tileSize)
     game.config.yTileCount = Math.floor((window.innerHeight - 120) / display.tileSize)
 
     game.board = Array(game.config.yTileCount).fill(null).map(() => new Array(game.config.xTileCount).fill(null))
   },
+
   createAIMoveTimer(e1) {
     let timer = {
       emoticon: e1,
@@ -83,6 +86,7 @@ let game = {
     timer.tick()
     game.aiMoveTimers.push(timer)
   },
+
   removeAIMoveTimer(e1) {
     game.aiMoveTimers.forEach(t => {
       if (t.emoticon === e1) {
@@ -94,6 +98,7 @@ let game = {
       }
     })
   },
+
   removeFightTimer(fightTimer) {
     game.fightTimers.forEach(t => {
       if (t.timer === fightTimer.timer) {
@@ -105,6 +110,7 @@ let game = {
       }
     })
   },
+
   isEmpty(posX, posY) {
     if (posX < 0 || posX > game.config.xTileCount - 1 || posY < 0 || posY > game.config.yTileCount - 1)
       return null
@@ -114,6 +120,7 @@ let game = {
     else
       return false
   },
+
   isEmoticon(posX, posY) {
     if (posX < 0 || posX > game.config.xTileCount - 1 || posY < 0 || posY > game.config.yTileCount - 1)
       return null
@@ -125,6 +132,7 @@ let game = {
       return false
     }
   },
+
   findEmoticon(e1) {
     for (let y = 0; y < game.board.length; y++) {
       let x = game.board[y].indexOf(e1)
@@ -134,6 +142,7 @@ let game = {
     }
     return null
   },
+
   spawnEmoticon(level, e1) {
     let spawnLimit = Math.floor((game.config.xTileCount + game.config.yTileCount) / 2)
     if (level === undefined || level < 1) {
@@ -162,6 +171,7 @@ let game = {
 
     }
   },
+
   startingSpawn(type) {
     if (type === 'player')
       game.spawnEmoticon(1, game.playerEmoticon)
@@ -173,6 +183,7 @@ let game = {
       game.spawnEmoticon()
     }
   },
+
   playerControls(event) {
     if (document.body.getAttribute('keypress-listener') !== 'true') {
       document.body.addEventListener('keydown', game.playerControls, false)
@@ -201,10 +212,12 @@ let game = {
       }
     }
   },
+
   removePlayerControls() {
     document.body.removeEventListener('keydown', game.playerControls, false);
     document.body.setAttribute('keypress-listener', 'false');
   },
+
   createPlayerLeaderboard() {
     let leaderboardCookie = getCookie('playerLeaderboard').split(',')
     if (leaderboardCookie[0] === '')
@@ -222,6 +235,7 @@ let game = {
       game.leaderboard.push(e1)
     }
   },
+
   addToPlayerLeaderboard(e1) {
     let leaderboardCookie = getCookie('playerLeaderboard').split(',')
     if (leaderboardCookie[0] === '')
@@ -269,6 +283,7 @@ let game = {
     }
     setCookie('playerLeaderboard', newCookie, 30)
   },
+
   rumble() {
     game.createBoard()
     display.renderer.tick()
@@ -278,10 +293,12 @@ let game = {
     game.startingSpawn('player')
     game.playerControls()
   },
+
   createChar() {
     game.reset()
     display.drawCreateChar()
   },
+
   aiRumble() {
     game.reset()
     game.aiMoveSpeedModifier = .05
@@ -291,6 +308,7 @@ let game = {
     display.leaderboardRenderer.tick()
     game.startingSpawn()
   },
+
   reset() {
     display.renderer.stopTimer()
     display.leaderboardRenderer.stopTimer()
@@ -318,12 +336,14 @@ let game = {
 
     game.removePlayerControls()
   },
+
   restartRumble() {
     game.reset()
     game.playerEmoticon = new Emoticon(game.lastCharStats.emoticon, game.lastCharStats.health, game.lastCharStats.attack, game.lastCharStats.defence)
     game.playerEmoticon.player = true
     game.rumble()
   },
+
   gameOver() {
     game.gameOverState = true
     game.addToPlayerLeaderboard(game.playerEmoticon)
@@ -350,7 +370,9 @@ let display = {
       clearTimeout(display.titleTimer.timer)
     }
   },
+
   tileSize: 80,
+
   leaderboardRenderer: {
     tickNumber: 0,
     timer: null,
@@ -364,6 +386,7 @@ let display = {
       clearTimeout(display.leaderboardRenderer.timer)
     }
   },
+
   renderer: {
     tickNumber: 0,
     timer: null,
@@ -377,6 +400,7 @@ let display = {
       clearTimeout(display.renderer.timer)
     }
   },
+
   drawBoard(ctx) {
     for (let y = 0; y < game.config.yTileCount; y++) {
       for (let x = 0; x < game.config.xTileCount; x++) {
@@ -468,7 +492,7 @@ let display = {
             ctx.strokeStyle = "#c7ecff";
             ctx.lineWidth = 5;
             if (e1.attackDirection !== null || e1.attackerDirection !== null) {
-              let text = `-${e1.combatDisplay}🎯`
+              let text = e1.combatDisplay
               if (e1.attackDirection === 'N' || e1.attackerDirection === 'N') {
                 ctx.strokeText(text, x * display.tileSize + (display.tileSize - (ctx.measureText(text).width / 2)) + 25, y * display.tileSize + Math.floor(display.tileSize / 1.7))
                 ctx.fillText(text, x * display.tileSize + (display.tileSize - (ctx.measureText(text).width / 2)) + 25, y * display.tileSize + Math.floor(display.tileSize / 1.7))
@@ -487,7 +511,7 @@ let display = {
               }
             } else {
               ctx.fillStyle = "green"
-              let text = `+${e1.combatDisplay}❤️`
+              let text = e1.combatDisplay
               ctx.strokeText(text, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 10) - 15)
               ctx.fillText(text, x * display.tileSize + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + Math.floor(display.tileSize / 10) - 15)
             }
@@ -506,8 +530,8 @@ let display = {
       ctx.fillText(gameOverText, (ctx.canvas.clientWidth / 2) - (ctx.measureText(gameOverText).width / 2), (ctx.canvas.clientHeight / 2) + (ctx.canvas.clientHeight / 10))
     }
   },
+
   drawLeaderboard() {
-    //$('#leaderboard').css('width', $('#display').css('width'))
     if (document.getElementById("canvas") !== null)
       $('#leaderboard').css('min-width', $('#canvas').css('width'))
     else
@@ -541,6 +565,7 @@ let display = {
     output += `</div>`
     $('#leaderboard').append(output)
   },
+
   drawAIRumbleButtons() {
     $('#game-buttons').append(
       `<span id="slower-button" class="game-button"><span>🐢</span></span> 
@@ -560,6 +585,7 @@ let display = {
 
     display.drawBackButton()
   },
+
   drawBackButton() {
     $('#game-buttons').append(`<span id="back-button" class="game-button"><span>🔙</span></span>`)
 
@@ -570,11 +596,13 @@ let display = {
       $('#nav').show()
     })
   },
+
   drawRestartButton() {
     $('#game-buttons').append(`<span id="restart-button" class="game-button"><span>🔄</span></span>`)
 
     $('#restart-button').click(game.restartRumble)
   },
+
   drawCreateChar() {
     $('#create-char').append(
       `<h3 id="points-to-spend">Spend ${game.config.baseStatPoints} Points</h3>
@@ -667,6 +695,7 @@ let display = {
       game.rumble()
     })
   },
+
   drawGame() {
     if (document.getElementById("canvas") === null) {
       $('#display').append(`<canvas id="canvas" width="${game.config.xTileCount * display.tileSize}" height="${game.config.yTileCount * display.tileSize}">`)
@@ -754,7 +783,10 @@ class Emoticon {
     }
 
     if (this.player) {
-      this.combatDisplay = heal
+      if (this.combatDisplay === '🎲')
+        this.combatDisplay = `🎲+${heal}❤️`
+      else
+        this.combatDisplay = `+${heal}❤️`
 
       let clearCombatDisplayTimer = {
         timer: null,
@@ -879,20 +911,7 @@ class Emoticon {
         if (game.isEmpty(moveX, moveY)) {
           game.board[pos[1]][pos[0]] = null
           game.board[moveY][moveX] = this
-        } /*else if (game.isEmoticon(moveX, moveY)) {
-          if (!game.board[moveY][moveX].inCombat) {
-            if (pos[0] - moveX > 0)
-              this.attackDirection = 'W'
-            if (pos[0] - moveX < 0)
-              this.attackDirection = 'E'
-            if (pos[1] - moveY > 0)
-              this.attackDirection = 'N'
-            if (pos[1] - moveY < 0)
-              this.attackDirection = 'S'
-
-            fight(this, game.board[moveY][moveX])
-          }
-        }*/
+        }
       }
     }
   }
@@ -968,7 +987,7 @@ function fight(e1, e2) {
           e1.attackDirection = null
           e2.attackerDirection = null
           fightOutcome(e1, e2, status)
-        }, game.config.playerFightSpeed, fightOutcomeTimer)
+        }, game.aiSpeed, fightOutcomeTimer)
         game.fightTimers.push(fightOutcomeTimer)
 
         break
@@ -980,8 +999,8 @@ function fight(e1, e2) {
     if (fightTimer)
       game.removeFightTimer(fightTimer)
 
-    e2.combatDisplay = attack(e1, e2)
-    e1.combatDisplay = attack(e2, e1)
+    e2.combatDisplay = `-${attack(e1, e2)}🎯`
+    e1.combatDisplay = `-${attack(e2, e1)}🎯`
 
     let status = checkStatus(e1, e2)
 
@@ -1082,10 +1101,15 @@ function checkStatus(e1, e2) {
 
 function fightOutcome(e1, e2, status) {
   if (status === 'draw') {
-    if (getRandomInt(2))
+    if (getRandomInt(2)) {
+      if (e1.player)
+        e1.combatDisplay = '🎲'
       status = 'win'
-    else
+    } else {
+      if (e2.player)
+        e2.combatDisplay = '🎲'
       status = 'lose'
+    }
   }
   if (status === 'win') {
     if (e2.player)
