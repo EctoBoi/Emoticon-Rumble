@@ -454,8 +454,8 @@ let display = {
                 ctx.strokeStyle = `rgba(${55 * intensity}, ${155 * intensity}, ${255 * intensity})`
               }
               if (e1.level < game.playerEmoticon.level) {
-                let intensity = 1 - ((game.playerEmoticon.level - e1.level) / 20)
-                if (intensity < 0 || e1.level <= game.playerEmoticon.level - 20)
+                let intensity = 1 - ((game.playerEmoticon.level - e1.level) / 15)
+                if (intensity < 0 || e1.level <= game.playerEmoticon.level - 15)
                   intensity = 0
                 ctx.strokeStyle = `rgba(55, 155, 255, ${intensity})`
               }
