@@ -9,6 +9,10 @@ window.onload = function () {
     delete game.keys[e.which]
   });
 
+  if (getCookie('dark-mode') === 'true') {
+    display.toggleDarkMode()
+  }
+
   display.titleTimer.tick()
 
   game.createPlayerLeaderboard()
@@ -26,6 +30,10 @@ $('#rumble-nav').click(function () {
 $('#ai-rumble-nav').click(function () {
   $('#nav').hide()
   game.aiRumble()
+})
+
+$('#dark-mode-button').click(function () {
+  display.toggleDarkMode()
 })
 
 let game = {
@@ -250,7 +258,7 @@ let game = {
   },
 
   createPlayerLeaderboard() {
-    let leaderboardCookie = getCookie('playerLeaderboard').split(',')
+    let leaderboardCookie = getCookie('player-leaderboard').split(',')
     if (leaderboardCookie[0] === '')
       leaderboardCookie = []
 
@@ -268,7 +276,7 @@ let game = {
   },
 
   addToPlayerLeaderboard(e1) {
-    let leaderboardCookie = getCookie('playerLeaderboard').split(',')
+    let leaderboardCookie = getCookie('player-leaderboard').split(',')
     if (leaderboardCookie[0] === '')
       leaderboardCookie = []
 
@@ -312,7 +320,7 @@ let game = {
       if (i < newPlayerLeaderboard.length - 1)
         newCookie += ','
     }
-    setCookie('playerLeaderboard', newCookie, 30)
+    setCookie('player-leaderboard', newCookie, 30)
   },
 
   rumble() {
@@ -402,6 +410,12 @@ let display = {
   tileSize: 80,
   offsetX: 50,
   offsetY: 30,
+  darkMode: false,
+  backgroundColor: "#fff4ff",
+  tileColor: "#c7ecff",
+  textColor: "black",
+  damageTextColor: 'red',
+  healTextColor: 'green',
 
   leaderboardRenderer: {
     tickNumber: 0,
@@ -417,34 +431,80 @@ let display = {
     }
   },
 
+  toggleDarkMode() {
+    display.darkMode = !display.darkMode
+
+    if (display.darkMode) {
+      display.applyDarkMode()
+    } else {
+      display.applyLightMode()
+    }
+  },
+
+  applyDarkMode() {
+    let darkColor = '#1b2a32'
+    let lightColor = "#2d4753"
+    setCookie('dark-mode', 'true', 30)
+    display.backgroundColor = darkColor
+    display.tileColor = lightColor
+    display.textColor = "#cddde4"
+    display.damageTextColor = '#e81224'
+    display.healTextColor = '#00e600'
+    $('body').css('background-color', darkColor)
+    $('body').css('color', '#cddde4')
+    $('#dark-mode-button-emoji').text('☀️')
+    $('.nav-button').css('background-color', lightColor)
+    $('.nav-button').hover(function () { $(this).css('background-color', darkColor) }, function () { $(this).css('background-color', lightColor) })
+    $('.game-button').css('background-color', lightColor)
+    $('.game-button').hover(function () { $(this).css('background-color', darkColor) }, function () { $(this).css('background-color', lightColor) })
+  },
+
+  applyLightMode() {
+    let darkColor = '#fff4ff'
+    let lightColor = '#c7ecff'
+    setCookie('dark-mode', 'false', 30)
+    display.backgroundColor = darkColor
+    display.tileColor = lightColor
+    display.textColor = 'black'
+    display.damageTextColor = 'red'
+    display.healTextColor = 'green'
+    $('body').css('background-color', darkColor)
+    $('body').css('color', 'black')
+    $('#dark-mode-button-emoji').text('🌑')
+    $('.nav-button').css('background-color', '#ccefff')
+    $('.nav-button').hover(function () { $(this).css('background-color', '#b3e7ff') }, function () { $(this).css('background-color', '#ccefff') })
+    $('.game-button').css('background-color', '#ccefff')
+    $('.game-button').hover(function () { $(this).css('background-color', '#b3e7ff') }, function () { $(this).css('background-color', '#ccefff') })
+  },
+
   drawBoard(ctx) {
-    ctx.fillStyle = "#fff4ff"
+    ctx.fillStyle = display.backgroundColor
     ctx.fillRect(0, 0, (game.config.xTileCount * display.tileSize) + (display.offsetX * 2), (game.config.yTileCount * display.tileSize) + (display.offsetY * 2))
     for (let y = 0; y < game.config.yTileCount; y++) {
       for (let x = 0; x < game.config.xTileCount; x++) {
         if (y % 2 === 0) {
           if (x % 2 === 0)
-            ctx.fillStyle = "#c7ecff"
+            ctx.fillStyle = display.tileColor
           else
-            ctx.fillStyle = "#fff4ff"
+            ctx.fillStyle = display.backgroundColor
         } else {
           if (x % 2 !== 0)
-            ctx.fillStyle = "#c7ecff"
+            ctx.fillStyle = display.tileColor
           else
-            ctx.fillStyle = "#fff4ff"
+            ctx.fillStyle = display.backgroundColor
         }
         ctx.fillRect(x * display.tileSize + display.offsetX, y * display.tileSize + display.offsetY, display.tileSize, display.tileSize)
       }
     }
-    ctx.lineWidth = 8
-    ctx.strokeStyle = "#c7ecff"
+    ctx.lineWidth = 4
+    ctx.strokeStyle = display.tileColor
     ctx.strokeRect(display.offsetX, display.offsetY, game.config.xTileCount * display.tileSize, game.config.yTileCount * display.tileSize)
 
     for (let y = 0; y < game.config.yTileCount; y++) {
       for (let x = 0; x < game.config.xTileCount; x++) {
         if (game.isEmoticon(x, y)) {
           let e1 = game.board[y][x]
-          ctx.fillStyle = "black"
+          ctx.fillStyle = display.textColor
           ctx.lineWidth = 3;
           //Level Border
           if (game.playerEmoticon === null) {
@@ -491,6 +551,14 @@ let display = {
           ctx.font = "14px Verdana"
           let level = `⭐${e1.level}`
           ctx.fillText(level, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(level).width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 1.25))
+        }
+      }
+    }
+
+    for (let y = 0; y < game.config.yTileCount; y++) {
+      for (let x = 0; x < game.config.xTileCount; x++) {
+        if (game.isEmoticon(x, y)) {
+          let e1 = game.board[y][x]
           //Attack Direction
           if (e1.attackDirection !== null) {
             ctx.font = "16px Verdana"
@@ -505,33 +573,34 @@ let display = {
           }
           //Combat Display
           if (e1.combatDisplay !== null) {
-            ctx.font = "16px Verdana"
-            ctx.fillStyle = "red"
-            ctx.strokeStyle = "#c7ecff";
-            ctx.lineWidth = 5;
+            ctx.font = "Bold 16px Verdana"
+            ctx.fillStyle = display.damageTextColor
+            ctx.strokeStyle = display.tileColor
+            ctx.lineWidth = 6;
             if (e1.attackDirection !== null || e1.attackerDirection !== null) {
               let text = e1.combatDisplay
               if (e1.attackDirection === 'N' || e1.attackerDirection === 'N') {
-                ctx.strokeText(text, x * display.tileSize + display.offsetX + (display.tileSize - (ctx.measureText(text).width / 2)) + 25, y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 1.7))
-                ctx.fillText(text, x * display.tileSize + display.offsetX + (display.tileSize - (ctx.measureText(text).width / 2)) + 25, y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 1.7))
+                ctx.strokeText(text, x * display.tileSize + display.offsetX + (display.tileSize - (ctx.measureText(text).width / 2)) + 25, y * display.tileSize + display.offsetY + (display.tileSize / 1.7))
+                ctx.fillText(text, x * display.tileSize + display.offsetX + (display.tileSize - (ctx.measureText(text).width / 2)) + 25, y * display.tileSize + display.offsetY + (display.tileSize / 1.7))
               }
               if (e1.attackDirection === 'S' || e1.attackerDirection === 'S') {
-                ctx.strokeText(text, x * display.tileSize + display.offsetX + (0 - (ctx.measureText(text).width / 2)) - 25, y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 1.7))
-                ctx.fillText(text, x * display.tileSize + display.offsetX + (0 - (ctx.measureText(text).width / 2)) - 25, y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 1.7))
+                ctx.strokeText(text, x * display.tileSize + display.offsetX + (0 - (ctx.measureText(text).width / 2)) - 25, y * display.tileSize + display.offsetY + (display.tileSize / 1.7))
+                ctx.fillText(text, x * display.tileSize + display.offsetX + (0 - (ctx.measureText(text).width / 2)) - 25, y * display.tileSize + display.offsetY + (display.tileSize / 1.7))
               }
               if (e1.attackDirection === 'E' || e1.attackerDirection === 'E') {
-                ctx.strokeText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + display.tileSize + Math.floor(display.tileSize / 10) + 15)
-                ctx.fillText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + display.tileSize + Math.floor(display.tileSize / 10) + 15)
+                ctx.strokeText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + display.tileSize + (display.tileSize / 10) + 15)
+                ctx.fillText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + display.tileSize + (display.tileSize / 10) + 15)
               }
               if (e1.attackDirection === 'W' || e1.attackerDirection === 'W') {
-                ctx.strokeText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 10) - 15)
-                ctx.fillText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 10) - 15)
+                ctx.strokeText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + (display.tileSize / 10) - 15)
+                ctx.fillText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + (display.tileSize / 10) - 15)
               }
             } else {
-              ctx.fillStyle = "green"
+              ctx.fillStyle = display.healTextColor
               let text = e1.combatDisplay
-              ctx.strokeText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 10) - 15)
-              ctx.fillText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 10) - 15)
+              ctx.strokeText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + (display.tileSize / 10) - 15)
+              ctx.fillText(text, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(text).width / 2)), y * display.tileSize + display.offsetY + (display.tileSize / 10) - 15)
+
             }
           }
         }
@@ -589,6 +658,11 @@ let display = {
       `<span id="slower-button" class="game-button"><span>🐢</span></span> 
       <span id="faster-button" class="game-button"><span>🐇</span></span>`)
 
+    if (display.darkMode)
+      display.applyDarkMode()
+    else
+      display.applyLightMode()
+
     $('#slower-button').click(function () {
       game.aiSpeed += 100
       if (game.aiSpeed > 100 && game.aiSpeed < 200)
@@ -606,6 +680,11 @@ let display = {
 
   drawBackButton() {
     $('#game-buttons').append(`<span id="back-button" class="game-button"><span>🔙</span></span>`)
+
+    if (display.darkMode)
+      display.applyDarkMode()
+    else
+      display.applyLightMode()
 
     $('#back-button').click(function () {
       game.reset()
@@ -636,6 +715,11 @@ let display = {
       <div class="nav-button" id="create-char-btn"><span>Create Character</span></div>`)
 
     $("#create-char-btn").addClass("btn-disable")
+
+    if (display.darkMode)
+      display.applyDarkMode()
+    else
+      display.applyLightMode()
 
     $("#random-button").click(function () {
       $("#emoticon-input").val(createEmoticon())
