@@ -1,5 +1,14 @@
 
 window.onload = function () {
+  $(document).on('keydown', function (e) {
+    if ([38, 37, 40, 39].indexOf(e.which) > -1) {
+      e.preventDefault()
+    }
+    game.keys[e.which] = true
+  }).on('keyup', function (e) {
+    delete game.keys[e.which]
+  });
+
   display.titleTimer.tick()
 
   game.createPlayerLeaderboard()
@@ -32,17 +41,20 @@ let game = {
     baseMaxAttackPoints: 10,
     baseMaxDefencePoints: 10,
     playerFightSpeed: 700,
+    playerMoveSpeed: 100,
     playerDamageMitigation: .1,
     spawnLevelSplit: 1.3,
     aiBaseSpeed: 1000,
     aiMaxSpeed: 50,
     aiBaseMoveSpeedModifier: .04,
-    renderSpeed: 33,
+    gameSpeed: 33,
     xTileCount: 8,
     yTileCount: 8,
   },
 
   playerEmoticon: null,
+  keys: {},
+  keyLockoutTimer: null,
   lastCharStats: null,
   gameOverState: false,
   aiSpeed: null,
@@ -51,6 +63,21 @@ let game = {
   leaderboard: [],
   aiMoveTimers: [],
   fightTimers: [],
+
+  gameLoop: {
+    tickNumber: 0,
+    timer: null,
+    tick() {
+      game.playerControls()
+      display.drawGame()
+      game.gameLoop.tickNumber++
+      game.gameLoop.timer = window.setTimeout('game.gameLoop.tick()', game.config.gameSpeed)
+    },
+    stopTimer() {
+      game.gameLoop.tickNumber = 0
+      clearTimeout(game.gameLoop.timer)
+    }
+  },
 
   createBoard: function () {
     game.config.xTileCount = Math.floor((window.innerWidth - 20) / display.tileSize)
@@ -75,9 +102,7 @@ let game = {
         if (moveSpeed < game.config.aiMaxSpeed)
           moveSpeed = game.config.aiMaxSpeed
 
-
-
-        thisTimer.timer = window.setTimeout(thisTimer.tick, moveSpeed, thisTimer);
+        thisTimer.timer = window.setTimeout(thisTimer.tick, moveSpeed, thisTimer)
       },
       stopTimer() {
         clearTimeout(this.timer)
@@ -97,6 +122,40 @@ let game = {
         }
       }
     })
+  },
+
+  playerControls() {
+    let lockout = function(){
+      game.keyLockoutTimer = window.setTimeout(function () {
+          game.keyLockoutTimer = null
+        }, game.config.playerMoveSpeed);
+    }
+
+    if (game.playerEmoticon !== null) {
+      if (game.keyLockoutTimer === null) {
+          
+        if (game.keys[87] || game.keys[38]) {
+          lockout()
+          game.playerEmoticon.move('N')
+        }
+        if (game.keys[65] || game.keys[37]) {
+          lockout()
+          game.playerEmoticon.move('W')
+        }
+        if (game.keys[83] || game.keys[40]) {
+          lockout()
+          game.playerEmoticon.move('S')
+        }
+        if (game.keys[68] || game.keys[39]) {
+          lockout()
+          game.playerEmoticon.move('E')
+        }
+        if (game.keys[82]) {
+          lockout()
+          game.restartRumble()
+        }
+      } 
+    }
   },
 
   removeFightTimer(fightTimer) {
@@ -184,40 +243,6 @@ let game = {
     }
   },
 
-  playerControls(event) {
-    if (document.body.getAttribute('keypress-listener') !== 'true') {
-      document.body.addEventListener('keydown', game.playerControls, false)
-
-      document.body.setAttribute('keypress-listener', 'true');
-    } else {
-      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].indexOf(event.code) > -1) {
-        event.preventDefault()
-      }
-
-      if (event) {
-        let key = event.key.toLowerCase()
-
-        if (key === "w" || key === "arrowup")
-          game.playerEmoticon.move('N')
-        if (key === "a" || key === "arrowleft")
-          game.playerEmoticon.move('W')
-        if (key === "s" || key === "arrowdown")
-          game.playerEmoticon.move('S')
-        if (key === "d" || key === "arrowright")
-          game.playerEmoticon.move('E')
-
-        if (key === 'r') {
-          game.restartRumble()
-        }
-      }
-    }
-  },
-
-  removePlayerControls() {
-    document.body.removeEventListener('keydown', game.playerControls, false);
-    document.body.setAttribute('keypress-listener', 'false');
-  },
-
   createPlayerLeaderboard() {
     let leaderboardCookie = getCookie('playerLeaderboard').split(',')
     if (leaderboardCookie[0] === '')
@@ -286,12 +311,11 @@ let game = {
 
   rumble() {
     game.createBoard()
-    display.renderer.tick()
+    game.gameLoop.tick()
     display.leaderboardRenderer.tick()
     display.drawRestartButton()
     display.drawBackButton()
     game.startingSpawn('player')
-    game.playerControls()
   },
 
   createChar() {
@@ -304,13 +328,13 @@ let game = {
     game.aiMoveSpeedModifier = .05
     game.createBoard()
     display.drawAIRumbleButtons()
-    display.renderer.tick()
+    game.gameLoop.tick()
     display.leaderboardRenderer.tick()
     game.startingSpawn()
   },
 
   reset() {
-    display.renderer.stopTimer()
+    game.gameLoop.stopTimer()
     display.leaderboardRenderer.stopTimer()
 
     game.aiMoveTimers.forEach(t => {
@@ -322,7 +346,6 @@ let game = {
     })
     game.fightTimers = []
 
-
     game.aiSpeed = game.config.aiBaseSpeed
     game.aiMoveSpeedModifier = game.config.aiBaseMoveSpeedModifier
     game.gameOverState = false
@@ -333,8 +356,6 @@ let game = {
     $('#create-char').text('')
     $('#game-buttons').text('')
     $('#leaderboard').text('')
-
-    game.removePlayerControls()
   },
 
   restartRumble() {
@@ -384,20 +405,6 @@ let display = {
     stopTimer() {
       display.leaderboardRenderer.tickNumber = 0
       clearTimeout(display.leaderboardRenderer.timer)
-    }
-  },
-
-  renderer: {
-    tickNumber: 0,
-    timer: null,
-    tick() {
-      display.drawGame()
-      display.renderer.tickNumber++
-      display.renderer.timer = window.setTimeout('display.renderer.tick()', game.config.renderSpeed)
-    },
-    stopTimer() {
-      display.renderer.tickNumber = 0
-      clearTimeout(display.renderer.timer)
     }
   },
 
