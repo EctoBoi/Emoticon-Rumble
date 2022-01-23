@@ -214,8 +214,8 @@ let game = {
         let posY = getRandomInt(game.config.yTileCount)
         if (e1 !== undefined) {
           if (e1.player) {
-            posX = Math.floor(game.config.xTileCount / 2)
-            posY = Math.floor(game.config.yTileCount / 2)
+            posX = (Math.floor(game.config.xTileCount / 2)-1)+getRandomInt(3)
+            posY = (Math.floor(game.config.yTileCount / 2)-1)+getRandomInt(3)
           }
         }
         if (game.isEmpty(posX, posY) && !game.isEmoticon(posX + 1, posY) && !game.isEmoticon(posX, posY + 1) && !game.isEmoticon(posX - 1, posY) && !game.isEmoticon(posX, posY - 1)) {
