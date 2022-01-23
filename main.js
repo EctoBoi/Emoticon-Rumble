@@ -125,15 +125,15 @@ let game = {
   },
 
   playerControls() {
-    let lockout = function(){
+    let lockout = function () {
       game.keyLockoutTimer = window.setTimeout(function () {
-          game.keyLockoutTimer = null
-        }, game.config.playerMoveSpeed);
+        game.keyLockoutTimer = null
+      }, game.config.playerMoveSpeed);
     }
 
     if (game.playerEmoticon !== null) {
       if (game.keyLockoutTimer === null) {
-          
+
         if (game.keys[87] || game.keys[38]) {
           lockout()
           game.playerEmoticon.move('N')
@@ -154,7 +154,7 @@ let game = {
           lockout()
           game.restartRumble()
         }
-      } 
+      }
     }
   },
 
@@ -212,6 +212,12 @@ let game = {
       while (spawnAttempts > 0) {
         let posX = getRandomInt(game.config.xTileCount)
         let posY = getRandomInt(game.config.yTileCount)
+        if (e1 !== undefined) {
+          if (e1.player) {
+            posX = Math.floor(game.config.xTileCount / 2)
+            posY = Math.floor(game.config.yTileCount / 2)
+          }
+        }
         if (game.isEmpty(posX, posY) && !game.isEmoticon(posX + 1, posY) && !game.isEmoticon(posX, posY + 1) && !game.isEmoticon(posX - 1, posY) && !game.isEmoticon(posX, posY - 1)) {
           if (e1 === undefined)
             e1 = new Emoticon()
