@@ -303,9 +303,9 @@ let game = {
     }
 
     newPlayerLeaderboard = newPlayerLeaderboard.sort((a, b) => {
-      if (a.wins > b.wins)
+      if (a.wins+a.level > b.wins+b.level)
         return -1
-      if (a.wins < b.wins)
+      if (a.wins+a.level < b.wins+b.level)
         return 1
       return 0
     })
@@ -625,9 +625,9 @@ let display = {
       $('#leaderboard').css('width', 'initial')
 
     let leaderboard = game.leaderboard.sort((a, b) => {
-      if (a.wins > b.wins)
+      if (a.wins+a.level > b.wins+b.level)
         return -1
-      if (a.wins < b.wins)
+      if (a.wins+a.level < b.wins+b.level)
         return 1
       return 0
     })
