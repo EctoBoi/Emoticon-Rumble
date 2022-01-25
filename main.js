@@ -478,7 +478,14 @@ let display = {
   },
 
   drawRules(){
-    let briefing = `The objective is to get the highest score (🏅) possible. Score is a combination of wins (🏆) and level (⭐). Wins are simple, how many fight you survive, level on the otherhand is situation. Winning a fight against an emoticon below your level awards you with 1 stat point, the same level, 2 stat points, and every 2 levels above you and additional 1 point. Stat points are distributed at random. The key factor to surviving is to pick your target wisely. You gain health back after a fight by stealing it from the opponent, and the lower their level from you, the less you steal. Note the opacity of the enemy borders, below you fades with the amount you can steal, above you gets darker denoting danger, and how many levels you'd get as a reward. The game speeds up as you level, so be quick on your fingers and see how far you can go!`
+    let briefing = `The objective is to get the highest 🏅Score possible. Score is a combination of 🏆Wins and ⭐Level. Wins are simple, how many fight you survive, level on the otherhand is situation. Winning a fight against an emoticon below your level awards you with one stat point, the same level, two stat points, and every two levels above you and additional one point. Stat points are distributed at random. The key factor to surviving is to pick your target wisely. You gain health back after a fight by stealing it from the opponent, and the lower their level from you, the less you steal. Note the opacity of the enemy borders, below you fades with the amount you can steal, above you gets darker denoting danger, and how many levels you'd get as a reward. The game speeds up as you level, so be quick on your fingers and see how far you can go!`
+
+    let details = `❤️Health is calculated by doubling the stat points and adding it to the base health of ${game.config.baseHealth}.
+    ⚔️Attack is used to determin the 🎯hit by adding it to a six sided dice 🎲roll.
+    🛡️Defence reduced the incoming hit by a percentage, ${game.config.resistanceModifier*100}% resistance per stat point. Defence has a limit of ${game.config.resistanceLimit*100}%
+    The player has a multiplicative damage mitigation of ${game.config.playerDamageMitigation*100}% to help withstand the onslaught.
+    Lifesteal is reduced in effectiveness by ${game.config.lifeStealModifier*100}% per level the opponent is below the player's level.
+    Not only do enemies speed up based on your level, but they also get ${game.config.aiBaseMoveSpeedModifier*100}% faster per level of its own.`
   },
 
   drawBoard(ctx) {
