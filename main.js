@@ -477,6 +477,10 @@ let display = {
     $('.game-button').hover(function () { $(this).css('background-color', '#b3e7ff') }, function () { $(this).css('background-color', '#ccefff') })
   },
 
+  drawRules(){
+    let briefing = `The objective is to get the highest score (🏅) possible. Score is a combination of wins (🏆) and level (⭐). Wins are simple, how many fight you survive, level on the otherhand is situation. Winning a fight against an emoticon below your level awards you with 1 stat point, the same level, 2 stat points, and every 2 levels above you and additional 1 point. Stat points are distributed at random. The key factor to surviving is to pick your target wisely. You gain health back after a fight by stealing it from the opponent, and the lower their level from you, the less you steal. Note the opacity of the enemy borders, below you fades with the amount you can steal, above you gets darker denoting danger, and how many levels you'd get as a reward. The game speeds up as you level, so be quick on your fingers and see how far you can go!`
+  },
+
   drawBoard(ctx) {
     ctx.fillStyle = display.backgroundColor
     ctx.fillRect(0, 0, (game.config.xTileCount * display.tileSize) + (display.offsetX * 2), (game.config.yTileCount * display.tileSize) + (display.offsetY * 2))
@@ -642,7 +646,7 @@ let display = {
     let output = '<div>'
     for (let i = 0; i < amountToShow; i++) {
       output += `<div style="display: inline-block;"><div style="display: inline-block; width:53px;">#${i + 1}${i === 0 ? '👑' : ''}: </div>
-      <div class="emoticon">${leaderboard[i].emoticon}</div> 🏆:${leaderboard[i].wins} ⭐:${leaderboard[i].level} ❤️:${leaderboard[i].stats.health} ⚔️:${leaderboard[i].stats.attack} 🛡️:${leaderboard[i].stats.defence}  ${leaderboard[i].player ? '👈' : ''}</div><br>`
+      <div class="emoticon">${leaderboard[i].emoticon}</div> 🏅:${leaderboard[i].wins+leaderboard[i].level} 🏆:${leaderboard[i].wins} ⭐:${leaderboard[i].level} ❤️:${leaderboard[i].stats.health} ⚔️:${leaderboard[i].stats.attack} 🛡️:${leaderboard[i].stats.defence}  ${leaderboard[i].player ? '👈' : ''}</div><br>`
     }
 
     output += `</div><br><br><div>`
