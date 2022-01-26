@@ -118,3 +118,15 @@ body{
   width: 80px;
   text-align: center;
 }
+
+#display{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#briefing{
+  max-width: 80%;
+  min-width: 500px;
+  font-size: 18px;
+}

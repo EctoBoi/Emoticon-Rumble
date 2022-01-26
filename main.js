@@ -32,6 +32,12 @@ $('#ai-rumble-nav').click(function () {
   game.aiRumble()
 })
 
+$('#briefing-nav').click(function () {
+  $('#nav').hide()
+  game.reset()
+  display.drawBriefing()
+})
+
 $('#dark-mode-button').click(function () {
   display.toggleDarkMode()
 })
@@ -90,6 +96,10 @@ let game = {
   createBoard: function () {
     game.config.xTileCount = Math.floor((window.innerWidth - 20 - display.offsetX * 2) / display.tileSize)
     game.config.yTileCount = Math.floor((window.innerHeight - 120 - display.offsetY * 2) / display.tileSize)
+    if (game.config.xTileCount < 2)
+      game.config.xTileCount = 2
+    if (game.config.yTileCount < 2)
+      game.config.yTileCount = 2
 
     game.board = Array(game.config.yTileCount).fill(null).map(() => new Array(game.config.xTileCount).fill(null))
   },
@@ -215,9 +225,10 @@ let game = {
     if (level === undefined || level < 1) {
       level = 1
     }
-    if (game.aiMoveTimers.length < spawnLimit) {
-      let spawnAttempts = 20
+    if (game.aiMoveTimers.length < spawnLimit + 1) {
+      let spawnAttempts = 50
       while (spawnAttempts > 0) {
+
         let posX = getRandomInt(game.config.xTileCount)
         let posY = getRandomInt(game.config.yTileCount)
         if (e1 !== undefined) {
@@ -270,8 +281,10 @@ let game = {
       let defence = leaderboardCookie[index + 3]
       let wins = leaderboardCookie[index + 4]
       let e1 = new Emoticon(emoticon, +health, +attack, +defence)
-      e1.wins = +wins
-      game.leaderboard.push(e1)
+      if (!isNaN(e1.stats.health)) {
+        e1.wins = +wins
+        game.leaderboard.push(e1)
+      }
     }
   },
 
@@ -303,9 +316,9 @@ let game = {
     }
 
     newPlayerLeaderboard = newPlayerLeaderboard.sort((a, b) => {
-      if (a.wins+a.level > b.wins+b.level)
+      if (a.wins + a.level > b.wins + b.level)
         return -1
-      if (a.wins+a.level < b.wins+b.level)
+      if (a.wins + a.level < b.wins + b.level)
         return 1
       return 0
     })
@@ -477,15 +490,21 @@ let display = {
     $('.game-button').hover(function () { $(this).css('background-color', '#b3e7ff') }, function () { $(this).css('background-color', '#ccefff') })
   },
 
-  drawRules(){
-    let briefing = `The objective is to get the highest 🏅Score possible. Score is a combination of 🏆Wins and ⭐Level. Wins are simple, how many fight you survive, level on the otherhand is situation. Winning a fight against an emoticon below your level awards you with one stat point, the same level, two stat points, and every two levels above you and additional one point. Stat points are distributed at random. The key factor to surviving is to pick your target wisely. You gain health back after a fight by stealing it from the opponent, and the lower their level from you, the less you steal. Note the opacity of the enemy borders, below you fades with the amount you can steal, above you gets darker denoting danger, and how many levels you'd get as a reward. The game speeds up as you level, so be quick on your fingers and see how far you can go!`
+  drawBriefing() {
+    let briefing = `<div>The objective is to get the highest 🏅Score possible. Score is a combination of 🏆Wins and ⭐Level. Wins are simple, how many fights you survive, level on the other hand is situational. Winning a fight against an emoticon below your level awards you with one stat point, the same level, two stat points, and every two levels above you an additional one point. Stat points are distributed at random. The key factor to surviving is to pick your target wisely. You gain health back after a fight by stealing it from the opponent, and the lower their level from you, the less you steal. Note the following, opacity of the enemy borders fade the lower their level to you, coinciding with the amount of health you can steal, and above you gets darker denoting danger, and how many levels you'd get as a reward. The game speeds up as you level, so be quick on your fingers and see how far you can go!</div>`
 
-    let details = `❤️Health is calculated by doubling the stat points and adding it to the base health of ${game.config.baseHealth}.
-    ⚔️Attack is used to determin the 🎯hit by adding it to a six sided dice 🎲roll.
-    🛡️Defence reduced the incoming hit by a percentage, ${game.config.resistanceModifier*100}% resistance per stat point. Defence has a limit of ${game.config.resistanceLimit*100}%
-    The player has a multiplicative damage mitigation of ${game.config.playerDamageMitigation*100}% to help withstand the onslaught.
-    Lifesteal is reduced in effectiveness by ${game.config.lifeStealModifier*100}% per level the opponent is below the player's level.
-    Not only do enemies speed up based on your level, but they also get ${game.config.aiBaseMoveSpeedModifier*100}% faster per level of its own.`
+    let details = `<div>-❤️Health is calculated by doubling the stat points and adding it to the base health of ${game.config.baseHealth}.<br><br>
+    -⚔️Attack is used to determine the 🎯hit by adding it to a six sided dice 🎲roll.<br><br>
+    -🛡️Defence reduced the incoming hit by a percentage, ${game.config.resistanceModifier * 100}% resistance per stat point. Defence has a limit of ${game.config.resistanceLimit * 100}%.<br><br>
+    -The player has a multiplicative damage mitigation of ${game.config.playerDamageMitigation * 100}% to help withstand the onslaught.<br><br>
+    -Lifesteal is reduced in effectiveness by ${game.config.lifeStealModifier * 100}% per level the opponent is below the players level.<br><br>
+    -Not only do enemies speed up based on your level, but they also get ${game.config.aiBaseMoveSpeedModifier * 100}% faster per level of its own.<br><br>
+    -If a fight ends in a draw there is a 50/50 chance of the player surviving, if this occurs there will be a 🎲 next to the heal above them.</div>`
+
+    let emoticons = `<div style='text-align:center;'>${createEmoticon()}&nbsp;&nbsp;&nbsp;&nbsp;${createEmoticon()}&nbsp;&nbsp;&nbsp;&nbsp;${createEmoticon()}</div>`
+
+    $('#display').append(`<div id='briefing'>${briefing}<br>${emoticons}<br>${details}<br></div>`)
+    display.drawBackButton()
   },
 
   drawBoard(ctx) {
@@ -636,9 +655,9 @@ let display = {
       $('#leaderboard').css('width', 'initial')
 
     let leaderboard = game.leaderboard.sort((a, b) => {
-      if (a.wins+a.level > b.wins+b.level)
+      if (a.wins + a.level > b.wins + b.level)
         return -1
-      if (a.wins+a.level < b.wins+b.level)
+      if (a.wins + a.level < b.wins + b.level)
         return 1
       return 0
     })
@@ -653,7 +672,7 @@ let display = {
     let output = '<div>'
     for (let i = 0; i < amountToShow; i++) {
       output += `<div style="display: inline-block;"><div style="display: inline-block; width:53px;">#${i + 1}${i === 0 ? '👑' : ''}: </div>
-      <div class="emoticon">${leaderboard[i].emoticon}</div> 🏅:${leaderboard[i].wins+leaderboard[i].level} 🏆:${leaderboard[i].wins} ⭐:${leaderboard[i].level} ❤️:${leaderboard[i].stats.health} ⚔️:${leaderboard[i].stats.attack} 🛡️:${leaderboard[i].stats.defence}  ${leaderboard[i].player ? '👈' : ''}</div><br>`
+      <div class="emoticon">${leaderboard[i].emoticon}</div> 🏅:${leaderboard[i].wins + leaderboard[i].level} 🏆:${leaderboard[i].wins} ⭐:${leaderboard[i].level} ❤️:${leaderboard[i].stats.health} ⚔️:${leaderboard[i].stats.attack} 🛡️:${leaderboard[i].stats.defence}  ${leaderboard[i].player ? '👈' : ''}</div><br>`
     }
 
     output += `</div><br><br><div>`
@@ -1233,12 +1252,12 @@ function fightOutcome(e1, e2, status) {
     e1.lifeSteal(e2)
 
     if (e2.level > 1)
-      game.spawnEmoticon(Math.ceil(e2.level / game.config.spawnLevelSplit))
-    game.spawnEmoticon(Math.ceil(e2.level / game.config.spawnLevelSplit))
-
-    if (e2.level > 1)
       game.leaderboard.push(e2)
     e2.remove()
+
+    if (e2.level > 1)
+      game.spawnEmoticon(Math.ceil(e2.level / game.config.spawnLevelSplit))
+    game.spawnEmoticon(Math.ceil(e2.level / game.config.spawnLevelSplit))
 
     e1.target = null
     e1.inCombat = false
@@ -1252,12 +1271,12 @@ function fightOutcome(e1, e2, status) {
     e2.lifeSteal(e1)
 
     if (e1.level > 1)
-      game.spawnEmoticon(Math.ceil(e1.level / game.config.spawnLevelSplit))
-    game.spawnEmoticon(Math.ceil(e1.level / game.config.spawnLevelSplit))
-
-    if (e1.level > 1)
       game.leaderboard.push(e1)
     e1.remove()
+
+    if (e1.level > 1)
+      game.spawnEmoticon(Math.ceil(e1.level / game.config.spawnLevelSplit))
+    game.spawnEmoticon(Math.ceil(e1.level / game.config.spawnLevelSplit))
 
     e2.target = null
     e2.inCombat = false
