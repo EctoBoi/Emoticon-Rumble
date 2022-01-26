@@ -9,10 +9,13 @@ body{
   color: black;
 }
 
+@media (max-width:320px) {body{width: 150%}}
+@media (max-width:481px) {body{width: 150%}}
+@media (max-width:641px) {body{width: 150%}}
+
+
 #title-box{
   height:50px;
-  width: 100%;
-  min-width: 520px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -100,10 +103,11 @@ body{
 }
 
 #dark-mode-button{
-  position: absolute;
+  position: fixed;
   right: 10px;
   top: 10px;
 }
+
 
 #leaderboard{
   display: flex;
@@ -127,6 +131,5 @@ body{
 
 #briefing{
   max-width: 80%;
-  min-width: 500px;
   font-size: 18px;
 }

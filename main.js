@@ -69,6 +69,7 @@ let game = {
   playerEmoticon: null,
   keys: {},
   keyLockoutTimer: null,
+  clickLockoutTimer: null,
   lastCharStats: null,
   gameOverState: false,
   aiSpeed: null,
@@ -150,30 +151,78 @@ let game = {
     }
 
     if (game.playerEmoticon !== null) {
-      if (game.keyLockoutTimer === null) {
+      if (game.keyLockoutTimer === null && game.clickLockoutTimer === null) {
 
         if (game.keys[87] || game.keys[38]) {
           lockout()
           game.playerEmoticon.move('N')
         }
-        if (game.keys[65] || game.keys[37]) {
+        if (game.keys[68] || game.keys[39]) {
           lockout()
-          game.playerEmoticon.move('W')
+          game.playerEmoticon.move('E')
         }
         if (game.keys[83] || game.keys[40]) {
           lockout()
           game.playerEmoticon.move('S')
         }
-        if (game.keys[68] || game.keys[39]) {
+        if (game.keys[65] || game.keys[37]) {
           lockout()
-          game.playerEmoticon.move('E')
+          game.playerEmoticon.move('W')
         }
+
+
         if (game.keys[82]) {
           lockout()
           game.restartRumble()
         }
       }
     }
+  },
+
+  playerClickControls() {
+    $('#canvas').on('mousedown', function (e) {
+      let lockout = function () {
+        game.clickLockoutTimer = window.setTimeout(function () {
+          game.clickLockoutTimer = null
+        }, game.config.playerMoveSpeed);
+      }
+
+      let canvasRect = document.getElementById('canvas').getBoundingClientRect()
+      let clickPosX = Math.floor((event.clientX - canvasRect.left) - display.offsetX)
+      let clickPosY = Math.floor((event.clientY - canvasRect.top) - display.offsetY)
+
+      let playerPosX = game.playerEmoticon.getPosition()[0] * display.tileSize + (display.tileSize / 2)
+      let playerPosY = game.playerEmoticon.getPosition()[1] * display.tileSize + (display.tileSize / 2)
+
+      let arr = [playerPosY - clickPosY, clickPosX - playerPosX, clickPosY - playerPosY, playerPosX - clickPosX]
+      let indexOfMax = arr.indexOf(Math.max(...arr))
+
+      if (game.playerEmoticon !== null) {
+        if (game.keyLockoutTimer === null && game.clickLockoutTimer === null) {
+
+          if (indexOfMax === 0) {
+            lockout()
+            game.playerEmoticon.move('N')
+          }
+          if (indexOfMax === 1) {
+            lockout()
+            game.playerEmoticon.move('E')
+          }
+          if (indexOfMax === 2) {
+            lockout()
+            game.playerEmoticon.move('S')
+          }
+          if (indexOfMax === 3) {
+            lockout()
+            game.playerEmoticon.move('W')
+          }
+        }
+      }
+    });
+  },
+
+  removePlayerClickControls() {
+    $('#canvas').unbind('mousedown')
   },
 
   removeFightTimer(fightTimer) {
@@ -221,14 +270,13 @@ let game = {
   },
 
   spawnEmoticon(level, e1) {
-    let spawnLimit = Math.floor((game.config.xTileCount + game.config.yTileCount) / 2)
+    let spawnLimit = Math.floor((game.config.xTileCount + game.config.yTileCount) / 2.5)
     if (level === undefined || level < 1) {
       level = 1
     }
     if (game.aiMoveTimers.length < spawnLimit + 1) {
-      let spawnAttempts = 50
+      let spawnAttempts = 33
       while (spawnAttempts > 0) {
-
         let posX = getRandomInt(game.config.xTileCount)
         let posY = getRandomInt(game.config.yTileCount)
         if (e1 !== undefined) {
@@ -339,6 +387,7 @@ let game = {
   rumble() {
     game.createBoard()
     game.gameLoop.tick()
+    game.playerClickControls()
     display.leaderboardRenderer.tick()
     display.drawRestartButton()
     display.drawBackButton()
@@ -364,6 +413,7 @@ let game = {
     game.gameLoop.stopTimer()
     display.leaderboardRenderer.stopTimer()
 
+    game.removePlayerClickControls()
 
     game.aiMoveTimers.forEach(t => {
       t.stopTimer()
