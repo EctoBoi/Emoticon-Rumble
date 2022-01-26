@@ -605,17 +605,22 @@ let display = {
             } else {
               if (e1.level >= game.playerEmoticon.level) {
                 let difference = e1.level - game.playerEmoticon.level
-                ctx.strokeStyle = "rgb(55, 155, 255)"
                 let intensity = 1 - (e1.level - game.playerEmoticon.level) / 8
                 if (intensity < 0)
                   intensity = 0
-                ctx.strokeStyle = `rgba(${55 * intensity}, ${155 * intensity}, ${255 * intensity})`
+                if (!display.darkMode)
+                  ctx.strokeStyle = `rgba(${55 * intensity}, ${155 * intensity}, ${255 * intensity})`
+                else
+                  ctx.strokeStyle = `rgba(${85 * intensity}, ${185 * intensity}, ${285 * intensity})`
               }
               if (e1.level < game.playerEmoticon.level) {
                 let intensity = 1 - ((game.playerEmoticon.level - e1.level) / 15)
                 if (intensity < 0 || e1.level <= game.playerEmoticon.level - 15)
                   intensity = 0
-                ctx.strokeStyle = `rgba(55, 155, 255, ${intensity})`
+                if (!display.darkMode)
+                  ctx.strokeStyle = `rgba(55, 155, 255, ${intensity})`
+                else
+                  ctx.strokeStyle = `rgba(85, 185, 285, ${intensity})`
               }
               ctx.strokeRect(x * display.tileSize + display.offsetX, y * display.tileSize + display.offsetY, display.tileSize, display.tileSize)
             }
