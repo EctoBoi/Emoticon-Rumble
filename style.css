@@ -9,8 +9,6 @@ body{
   color: black;
 }
 
-@media (max-width:320px) {body{width: 150%}}
-@media (max-width:481px) {body{width: 150%}}
 @media (max-width:641px) {body{width: 150%}}
 
 

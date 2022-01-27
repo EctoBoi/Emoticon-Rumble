@@ -181,6 +181,8 @@ let game = {
 
   playerClickControls() {
     $('#canvas').on('mousedown', function (e) {
+      e.preventDefault()
+
       let lockout = function () {
         game.clickLockoutTimer = window.setTimeout(function () {
           game.clickLockoutTimer = null
@@ -541,9 +543,11 @@ let display = {
   },
 
   drawBriefing() {
-    let briefing = `<div>The objective is to get the highest 🏅Score possible. Score is a combination of 🏆Wins and ⭐Level. Wins are simple, how many fights you survive, level on the other hand is situational. Winning a fight against an emoticon below your level awards you with one stat point, the same level, two stat points, and every two levels above you an additional one point. Stat points are distributed at random. The key factor to surviving is to pick your target wisely. You gain health back after a fight by stealing it from the opponent, and the lower their level from you, the less you steal. Note the following, opacity of the enemy borders fade the lower their level to you, coinciding with the amount of health you can steal, and above you gets darker denoting danger, and how many levels you'd get as a reward. The game speeds up as you level, so be quick on your fingers and see how far you can go!</div>`
+    let briefing = `<h3 style='text-align:center;'>${createEmoticon()} Briefing ${createEmoticon()}</h3><div>The objective is to get the highest 🏅Score possible. Score is a combination of 🏆Wins and ⭐Level. Wins are simple, how many fights you survive: Levels on the other hand are situational. Winning a fight against an emoticon below your level awards you with one stat point, while an emoticon of equal level awards two levels and every two levels above you an additional one point. Stat points are distributed at random. The key factor to surviving is to pick your target wisely. You gain health back after a fight by stealing it from the opponent, and the lower their level from you, the less you steal. Note the following: Opacity of the enemy borders is dependent on level relative to your own. Lower levels are faded, showing that they provide less health when killed. Higher levels are darker, giving a clear sense of danger and indicating the amount of levels gained. The game speeds up as you level, so be quick with your fingers and see how far you can go!</div>`
 
-    let details = `<div>-❤️Health is calculated by doubling the stat points and adding it to the base health of ${game.config.baseHealth}.<br><br>
+    let controls = `<h3 style='text-align:center;'>${createEmoticon()} Controls ${createEmoticon()}</h3><div>If you have a ⌨️Keyboard, ⬆️➡️⬇️⬅️ and 🇼 🇦 🇸 🇩 move your character, otherwise 🖱️Clicking or 👆Tapping in a direction also works. You can also restart with your current character by pressing 🇷.</div>`
+
+    let details = `<h3 style='text-align:center;'>${createEmoticon()} Details ${createEmoticon()}</h3><div>-❤️Health is calculated by doubling the stat points and adding it to the base health of ${game.config.baseHealth}.<br><br>
     -⚔️Attack is used to determine the 🎯hit by adding it to a six sided dice 🎲roll.<br><br>
     -🛡️Defence reduced the incoming hit by a percentage, ${game.config.resistanceModifier * 100}% resistance per stat point. Defence has a limit of ${game.config.resistanceLimit * 100}%.<br><br>
     -The player has a multiplicative damage mitigation of ${game.config.playerDamageMitigation * 100}% to help withstand the onslaught.<br><br>
@@ -551,9 +555,8 @@ let display = {
     -Not only do enemies speed up based on your level, but they also get ${game.config.aiBaseMoveSpeedModifier * 100}% faster per level of its own.<br><br>
     -If a fight ends in a draw there is a 50/50 chance of the player surviving, if this occurs there will be a 🎲 next to the heal above them.</div>`
 
-    let emoticons = `<div style='text-align:center;'>${createEmoticon()}&nbsp;&nbsp;&nbsp;&nbsp;${createEmoticon()}&nbsp;&nbsp;&nbsp;&nbsp;${createEmoticon()}</div>`
 
-    $('#display').append(`<div id='briefing'>${briefing}<br>${emoticons}<br>${details}<br></div>`)
+    $('#display').append(`<div id='briefing'>${briefing}${controls}${details}<br></div>`)
     display.drawBackButton()
   },
 
