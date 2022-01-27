@@ -261,6 +261,18 @@ let game = {
     }
   },
 
+  isWall(posX, posY) {
+    if (posX < 0 || posX > game.config.xTileCount - 1 || posY < 0 || posY > game.config.yTileCount - 1)
+      return null
+
+    if (game.board[posY][posX] instanceof Wall) {
+      return true
+    }
+    else {
+      return false
+    }
+  },
+
   findEmoticon(e1) {
     for (let y = 0; y < game.board.length; y++) {
       let x = game.board[y].indexOf(e1)
@@ -306,7 +318,26 @@ let game = {
     }
   },
 
+  spawnWall() {
+    let spawnAttempts = 33
+    while (spawnAttempts > 0) {
+      let posX = getRandomInt(game.config.xTileCount)
+      let posY = getRandomInt(game.config.yTileCount)
+
+      if (game.isEmpty(posX, posY)) {
+        game.board[posY][posX] = new Wall()
+        break
+      }
+      spawnAttempts--
+    }
+  },
+
   startingSpawn(type) {
+    let wallSpawnAmount = (Math.floor((game.config.xTileCount + game.config.yTileCount) / 3) - 1) + getRandomInt(3)
+    for (let i = 0; i < wallSpawnAmount; i++) {
+      game.spawnWall()
+    }
+
     if (type === 'player')
       game.spawnEmoticon(1, game.playerEmoticon)
 
@@ -640,6 +671,12 @@ let display = {
           let level = `⭐${e1.level}`
           ctx.fillText(level, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(level).width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 1.25))
         }
+        //Walls
+        if (game.isWall(x, y)) {
+          let wall = game.board[y][x]
+          ctx.font = "50px Verdana"
+          ctx.fillText(wall.emoji, x * display.tileSize + display.offsetX + ((display.tileSize / 2) - (ctx.measureText(wall.emoji).width / 2)), y * display.tileSize + display.offsetY + Math.floor(display.tileSize / 1.4))
+        }
       }
     }
 
@@ -895,6 +932,13 @@ let display = {
     let canvas = document.getElementById("canvas")
     let ctx = canvas.getContext("2d")
     display.drawBoard(ctx)
+  }
+}
+
+class Wall {
+  constructor() {
+    let emojis = ['🌳', '🌲', '⛰️', '🏔️', '🏠', '🏡', '🏘️', '🏦', '🏫', '🏥', '🏢', '⛪', '🏣', '🏬']
+    this.emoji = emojis[getRandomInt(emojis.length)]
   }
 }
 
