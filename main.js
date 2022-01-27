@@ -1371,18 +1371,16 @@ function createStats() {
 }
 
 function createEmoticon() {
-  let parts = {
-    facesLeft: ['(', '[', '{', 'ʕ', '≧', '>', '=', '༼', '|', '｡', '⋟', '꒰'],
-    facesRight: [')', ']', '}', 'ʔ', '≦', '<', '=', '༽', '|', '｡', '⋞', '꒱'],
-    eyes: ['^', ';', '╥', '*', '•', '●', '◔', '◑', '◉', '˘', '❛', '◠', '︺', '⊙', '♡', 'x', 'Q', 'ಠ', '°', '☆', 'Θ', 'ఠ', '¬'],
-    mouths: ['ᴥ', 'v', 'o', '_', '.', '-', '◡', '⌓', '︹', '︿', 'ᆺ', '﹏', 'ᆽ', 'Д', 'w', '□', 'ω', ' ͜ʖ', '±', '◇', '～', '∇', '⍨', '₃', 'ε']
-  }
+  let facesLeft = ['(', '[', '{', 'ʕ', '≧', '>', '=', '༼', '|', '｡', '⋟', '꒰']
+  let facesRight = [')', ']', '}', 'ʔ', '≦', '<', '=', '༽', '|', '｡', '⋞', '꒱']
+  let eyes = ['^', ';', '╥', '*', '•', '●', '◔', '◑', '◉', '˘', '❛', '◠', '︺', '⊙', '♡', 'x', 'Q', 'ಠ', '°', '☆', 'Θ', 'ఠ', '¬']
+  let mouths = ['ᴥ', 'v', 'o', '_', '.', '-', '◡', '⌓', '︹', '︿', 'ᆺ', '﹏', 'ᆽ', 'Д', 'w', '□', 'ω', ' ͜ʖ', '±', '◇', '～', '∇', '⍨', '₃', 'ε']
 
-  let faceIndex = getRandomInt(parts.facesLeft.length)
-  let eyeIndex = getRandomInt(parts.eyes.length)
-  let mouthIndex = getRandomInt(parts.mouths.length)
+  let faceIndex = getRandomInt(facesLeft.length)
+  let eyeIndex = getRandomInt(eyes.length)
+  let mouthIndex = getRandomInt(mouths.length)
 
-  return parts.facesLeft[faceIndex] + parts.eyes[eyeIndex] + parts.mouths[mouthIndex] + parts.eyes[eyeIndex] + parts.facesRight[faceIndex]
+  return facesLeft[faceIndex] + eyes[eyeIndex] + mouths[mouthIndex] + eyes[eyeIndex] + facesRight[faceIndex]
 }
 
 function getRandomInt(max) {
