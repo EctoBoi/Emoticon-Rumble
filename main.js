@@ -284,11 +284,12 @@ let game = {
   },
 
   spawnEmoticon(level, e1) {
-    let spawnLimit = Math.floor((game.config.xTileCount + game.config.yTileCount) / 2.5)
+    let spawnLimit = Math.floor((game.config.xTileCount + game.config.yTileCount) / 3.5)
+    spawnLimit++
     if (level === undefined || level < 1) {
       level = 1
     }
-    if (game.aiMoveTimers.length < spawnLimit + 1) {
+    if (game.aiMoveTimers.length < spawnLimit) {
       let spawnAttempts = 33
       while (spawnAttempts > 0) {
         let posX = getRandomInt(game.config.xTileCount)
