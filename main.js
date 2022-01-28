@@ -1117,6 +1117,8 @@ class Emoticon {
         if (game.isEmpty(moveX, moveY)) {
           game.board[pos[1]][pos[0]] = null
           game.board[moveY][moveX] = this
+        } else if (game.isWall(moveX, moveY)) {
+          moveRandom(pos, this)
         } else if (game.isEmoticon(moveX, moveY)) {
           if (!game.board[moveY][moveX].inCombat) {
             if (pos[0] - moveX > 0)
@@ -1131,21 +1133,25 @@ class Emoticon {
             fight(this, game.board[moveY][moveX])
           }
         }
-
       } else {
-        let moves = [1, -1]
-        let xOrY = getRandomInt(2)
-        let moveX = pos[0]
-        let moveY = pos[1]
-        if (xOrY)
-          moveX = moves[getRandomInt(2)] + pos[0]
-        else
-          moveY = moves[getRandomInt(2)] + pos[1]
+        moveRandom(pos, this)
+      }
+    }
 
-        if (game.isEmpty(moveX, moveY)) {
-          game.board[pos[1]][pos[0]] = null
-          game.board[moveY][moveX] = this
-        }
+    function moveRandom(pos, e1) {
+      let moves = [1, -1]
+      let xOrY = getRandomInt(2)
+      let moveX = pos[0]
+      let moveY = pos[1]
+      if (xOrY)
+        moveX = moves[getRandomInt(2)] + pos[0]
+      else
+        moveY = moves[getRandomInt(2)] + pos[1]
+
+
+      if (game.isEmpty(moveX, moveY)) {
+        game.board[pos[1]][pos[0]] = null
+        game.board[moveY][moveX] = e1
       }
     }
   }
